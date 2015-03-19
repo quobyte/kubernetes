@@ -4,8 +4,21 @@ uname -a
 
 echo registry=$QUOBYTE_REGISTRY > /etc/quobyte/host.cfg
 
-echo rpc.port=$QUOBYTE_RPC_PORT > /etc/quobyte/$QUOBYTE_SERVICE.cfg
-echo http.port=$QUOBYTE_HTTP_PORT >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+if [[ $QUOBYTE_RPC_PORT ]]
+then
+  echo rpc.port=$QUOBYTE_RPC_PORT > /etc/quobyte/$QUOBYTE_SERVICE.cfg
+fi
+
+if [[ $QUOBYTE_HTTP_PORT ]]
+then
+  echo http.port=$QUOBYTE_HTTP_PORT >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+fi
+
+if [[ $QUOBYTE_WEBCONSOLE_PORT ]]
+then
+  echo webconsole.port=$QUOBYTE_WEBCONSOLE_PORT >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+fi
+
 echo test.device_dir=/devices >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 echo public_ip=$HOST_IP >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 
