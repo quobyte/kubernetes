@@ -4,11 +4,10 @@ uname -a
 
 echo registry=$QUOBYTE_REGISTRY > /etc/quobyte/host.cfg
 
-echo rpc.port=7870 > /etc/quobyte/$QUOBYTE_SERVICE.cfg
-echo http.port=7871 >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
-echo webconsole.port=8080 >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+echo rpc.port=$QUOBYTE_CONTAINER_RPC_PORT > /etc/quobyte/$QUOBYTE_SERVICE.cfg
+echo http.port=$QUOBYTE_CONTAINER_HTTP_PORT >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+echo webconsole.port=$QUOBYTE_CONTAINER_WEBCONSOLE_PORT >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 
-echo test.device_dir=/devices >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 echo public_ip=$HOST_IP >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 
 SERVICE_UUID=$(uuidgen)
