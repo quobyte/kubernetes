@@ -10,4 +10,6 @@ RUN apt-get update
 RUN apt-get install -y quobyte-server quobyte-client dnsutils
 
 ADD ./main.sh /opt/main.sh
+
+EXPOSE 7870 7871 8080
 ENTRYPOINT ["/opt/main.sh"]
