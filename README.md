@@ -1,10 +1,15 @@
-Scripts for automatic deployment of Quobyte installations.
+Scripts and tools for deploying Quobyte installations
+=====================================================
 
 Curently contains:
- * ansible script for AWS deployments
+ * **Ansible** script for AWS deployments
+ * device initialization tools: **qbootstrap** and **qmkdev**
 
-For Puppet, please refer to Syseleven's recipes:
+For **Puppet**, please refer to SysEleven's recipes:
 https://github.com/syseleven/puppet-quobyte
 
-Arnold from Inovex maintains a Saltstack formula here:
+Arnold from Inovex maintains a **Saltstack** formula here:
 https://github.com/bechtoldt/saltstack-quobyte-formula
+
+For **Mesos**, please check out our Mesos framework:
+https://github.com/quobyte/mesos-framework
