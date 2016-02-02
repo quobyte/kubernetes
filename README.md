@@ -1,7 +1,7 @@
 Scripts and tools for deploying Quobyte installations
 =====================================================
 
-Curently contains:
+Currently contains:
  * **Ansible** script for AWS deployments
  * device initialization tools: **qbootstrap** and **qmkdev**
 
