@@ -1,0 +1,31 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: quobyte-metadata
+  labels:
+    app: quobyte
+    role: metadata
+spec:
+  template:
+    metadata:
+      labels:
+        app: quobyte
+        role: metadata
+    spec:
+      containers:
+      - name: quobyte-registry
+        image: quobyte-server:1.2.6
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: data
+          - name: QUOBYTE_REGISTRY
+            value: quobyte-registry:7866
+        volumeMounts:
+          - name: devicedir
+            mountPath: /devices
+      volumes:
+      - name: devicedir
+        hostPath:
+          path: /mnt

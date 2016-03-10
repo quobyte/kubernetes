@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: quobyte-client-sleep
+spec:
+  containers:
+  - name: quobyte-client-sleep
+    image: quobyte-client:1.2.6
+    args:
+    - sleep
+    - "1000000"
+    securityContext:
+      privileged: true
+    env:
+      - name: QUOBYTE_CLIENT_HTTP_PORT
+        value: "55000"
+      - name: QUOBYTE_CLIENT_LOG_LEVEL
+        value: "INFO"
+      - name: QUOBYTE_REGISTRY
+        value: quobyte-registry:7866
+      - name: QUOBYTE_MOUNT_POINT
+        value: /quobyte/mnt
+    volumeMounts:
+      - name: mountdir
+        mountPath: /quobyte/mnt
+#/mnt/dev2:/quobyte/mnt:shared
+  volumes:
+  - name: mountdir
+    hostPath:
+      path: /mnt/dev2
+# kubectl exec -ti quobyte-client-sleep sh

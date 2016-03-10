@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: quobyte-webconsole-api
+  labels:
+    app: quobyte
+    role: webconsole-api
+spec:
+  template:
+    metadata:
+      labels:
+        app: quobyte
+        role: webconsole-api
+    spec:
+      nodeSelector:
+        quobyte: registry
+      containers:
+      - name: quobyte-webconsole
+        image: quobyte-server:1.2.6
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: "webconsole"
+          - name: QUOBYTE_WEBCONSOLE_PORT
+            value: "8080"
+          - name: QUOBYTE_REGISTRY
+            value: quobyte-registry:7866
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+        volumeMounts:
+          - name: devicedir
+            mountPath: /devices
+      - name: quobyte-api
+        image: quobyte-server:1.2.6
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: "api"
+          - name: QUOBYTE_API_PORT
+            value: "7860"
+          - name: QUOBYTE_REGISTRY
+            value: quobyte-registry:7866
+        ports:
+          - name: api
+            containerPort: 7860
+            protocol: TCP
+        volumeMounts:
+          - name: devicedir
+            mountPath: /devices
+      volumes:
+      - name: devicedir
+        hostPath:
+          path: /mnt
