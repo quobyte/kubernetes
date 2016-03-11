@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: quobyte-metadata
+  labels:
+    app: quobyte
+    role: metadata
+spec:
+  template:
+    metadata:
+      labels:
+        app: quobyte
+        role: metadata
+    spec:
+      # Could be metadata to decouple registry
+      nodeSelector:
+        quobyte: registry
+      containers:
+      - name: quobyte-registry
+        image: quobyte-server:1.2.6
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: metadata
+          - name: QUOBYTE_REGISTRY
+            value: quobyte-registry:7866
+        volumeMounts:
+          - name: devicedir
+            mountPath: /devices
+      volumes:
+      - name: devicedir
+        hostPath:
+          path: /mnt

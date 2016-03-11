@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: quobyte-registry
+  labels:
+    app: quobyte
+    role: registry
+spec:
+  template:
+    metadata:
+      labels:
+        app: quobyte
+        role: registry
+    spec:
+      nodeSelector:
+        quobyte: registry
+      containers:
+      - name: quobyte-registry
+        image: quobyte-server:1.2.6
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: registry
+          - name: QUOBYTE_RPC_PORT
+            value: "7866"
+          - name: QUOBYTE_HTTP_PORT
+            value: "7876"
+          - name: QUOBYTE_REGISTRY
+            value: test
+        ports:
+          - name: rpc-tcp
+            containerPort: 7866
+            protocol: TCP
+          - name: rpc-udp
+            containerPort: 7866
+            protocol: UDP
+          - name: http
+            containerPort: 7876
+            protocol: TCP
+        volumeMounts:
+          - name: devicedir
+            mountPath: /devices
+      volumes:
+      - name: devicedir
+        hostPath:
+          path: /mnt
