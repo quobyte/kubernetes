@@ -4,7 +4,7 @@
 
 - Own Docker Registry or import the images on all nodes
 - MountFlags=shared
-- Kuberntes 1.1.+
+- Kubernetes 1.1.+
 - enabled `extensions/v1beta1`
 
 ## Testing local
