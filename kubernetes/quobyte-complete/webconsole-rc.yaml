@@ -1,0 +1,98 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  namespace: quobyte
+  name: webconsole
+spec:
+  template:
+    metadata:
+      labels:
+        role: webconsole
+        version: 1.2.10
+    spec:
+      containers:
+      - name: quobyte-webconsole
+        image: quay.io/quobyte/quobyte-server:1.2.10
+        env:
+          - name: QUOBYTE_SERVICE
+            value: "webconsole"
+          - name: QUOBYTE_WEBCONSOLE_PORT
+            value: "8080"
+          - name: QUOBYTE_REGISTRY
+            value: registry:7866
+          - name: QUOBYTE_API
+            value: api:7860
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/MIN_MEM_WEBCONSOLE=.*/MIN_MEM_WEBCONSOLE=64m/" -i /etc/default/quobyte
+            sed "s/MAX_MEM_WEBCONSOLE=.*/MAX_MEM_WEBCONSOLE=270m/" -i /etc/default/quobyte
+            exec /bin/bash -x /opt/main.sh
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+        resources:
+          limits:
+            memory: "300Mi"
+            cpu: "100m"
+      - name: quobyte-api
+        image: quay.io/quobyte/quobyte-server:1.2.10
+        env:
+          - name: QUOBYTE_SERVICE
+            value: api
+          - name: QUOBYTE_API_PORT
+            value: "7860"
+          - name: QUOBYTE_REGISTRY
+            value: registry:7866
+          - name: QUOBYTE_LOG_LEVEL
+            value: DEBUG
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        ports:
+          - name: api
+            containerPort: 7860
+            protocol: TCP
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/.*MIN_MEM_API=.*/MIN_MEM_API=64m/" -i /etc/default/quobyte
+            sed "s/.*MAX_MEM_API=.*/MAX_MEM_API=270m/" -i /etc/default/quobyte
+            exec /bin/bash -x /opt/main.sh
+        resources:
+          limits:
+            memory: "300Mi"
+            cpu: "100m"
+        volumeMounts:
+            - name: devices
+              mountPath: /devices
+        readinessProbe:
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 7860
+        livenessProbe:
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+            tcpSocket:
+              port: 7860
+      imagePullSecrets:
+        - name: dockercfg
+      volumes:
+      - name: devices
+        emptyDir:

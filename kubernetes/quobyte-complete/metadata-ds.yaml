@@ -1,0 +1,56 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  namespace: quobyte
+  name: metadata
+spec:
+  template:
+    metadata:
+      labels:
+        role: metadata
+        version: 1.2.10
+    spec:
+      containers:
+      - name: quobyte-metadata
+        image: quay.io/quobyte/quobyte-server:1.2.10
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: metadata
+          - name: QUOBYTE_REGISTRY
+            value: registry
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/.*MIN_MEM_METADATA=.*/MIN_MEM_METADATA=256m/" -i /etc/default/quobyte
+            sed "s/.*MAX_MEM_METADATA=.*/MAX_MEM_METADATA=450m/" -i /etc/default/quobyte
+            if [ ! -f /devices/metadata/QUOBYTE_DEV_SETUP ]; then
+              mkdir -p /devices/metadata
+              cat >/devices/metadata/QUOBYTE_DEV_SETUP <<EOF
+            device.serial=${POD_NAME}-$(uuidgen)
+            device.model=Kubernetes-hostDir
+            device.type=METADATA_DEVICE
+            EOF
+            fi
+            exec /bin/bash -x /opt/main.sh
+        volumeMounts:
+          - name: devices
+            mountPath: /devices
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+      volumes:
+      - name: devices
+        hostPath:
+          path: /mnt
