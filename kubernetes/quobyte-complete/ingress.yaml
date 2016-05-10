@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  namespace: quobyte
+  name: quobyte
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /api
+        backend:
+          serviceName: api
+          servicePort: 80
+      - path: /
+        backend:
+          serviceName: webconsole
+          servicePort: 80
