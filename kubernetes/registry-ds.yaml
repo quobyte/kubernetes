@@ -1,21 +1,18 @@
-apiVersion: v1
-kind: ReplicationController
+apiVersion: extensions/v1beta1
+kind: DaemonSet
 metadata:
-  namespace: quobyte
   name: registry
+  namespace: quobyte
 spec:
-  replicas: 3
   template:
     metadata:
       labels:
         role: registry
-        version: 1.2.10
-      name: registry-bootstrap
-      namespace: quobyte
+        version: 1.3.6
     spec:
       containers:
         - name: quobyte-registry
-          image: quay.io/quobyte/quobyte-server:1.2.10
+          image: quay.io/quobyte/quobyte-server:1.3.6
           securityContext:
             privileged: true
           env:
@@ -35,6 +32,19 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: QUOBYTE_EXTRA_SERVICE_CONFIG
+              value: >
+                constants.automation.manage_registry_replicas=true
+            - name: MAX_MEM
+              valueFrom:
+                configMapKeyRef:
+                  name: quobyte-config
+                  key: registry.max_mem
+            - name: MIN_MEM
+              valueFrom:
+                configMapKeyRef:
+                  name: quobyte-config
+                  key: registry.min_mem
           ports:
             - name: rpc-tcp
               containerPort: 7866
@@ -47,21 +57,25 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: devices
-              mountPath: /devices
+              mountPath: /devices/dev1
           command:
             - /bin/bash
             - -xec
             - |
-              sed "s/.*MIN_MEM_REGISTRY=.*/MIN_MEM_REGISTRY=64m/" -i /etc/default/quobyte
-              sed "s/.*MAX_MEM_REGISTRY=.*/MAX_MEM_REGISTRY=450m/" -i /etc/default/quobyte
+              sed "s/.*MIN_MEM_REGISTRY=.*/MIN_MEM_REGISTRY=${MIN_MEM}/" -i /etc/default/quobyte
+              sed "s/.*MAX_MEM_REGISTRY=.*/MAX_MEM_REGISTRY=${MAX_MEM}/" -i /etc/default/quobyte
               if [ ! -f /devices/dev1/QUOBYTE_DEV_SETUP ]; then
                 mkdir -p /devices/dev1
-                cat >/devices/dev1/QUOBYTE_DEV_SETUP <<EOF
+                cat > /devices/dev1/QUOBYTE_DEV_SETUP <<EOF
               device.serial=${POD_NAME}-$(uuidgen)
-              device.model=Kubernetes-emptyDir
+              device.model=Kubernetes-hostDir
               device.type=DIR_DEVICE
               EOF
+                if [ $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | wc -l) == 0 ]; then
+                  echo "device.bootstrap=true" >> /devices/dev1/QUOBYTE_DEV_SETUP
+                fi
               fi
+
               exec /bin/bash -x /opt/main.sh
           resources:
             limits:
@@ -76,8 +90,15 @@ spec:
             httpGet:
               port: 7876
               path: /
-      imagePullSecrets:
-        - name: dockercfg
+          livenessProbe:
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            httpGet:
+              port: 7876
+              path: /
+      nodeSelector:
+        quobyte_registry: "true"
       volumes:
       - name: devices
-        emptyDir:
+        hostPath:
+          path: /mnt/registry

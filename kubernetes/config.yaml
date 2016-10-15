@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: quobyte-config
+  namespace: quobyte
+data:
+  registry.min_mem: 64m
+  registry.max_mem: 450m
+  metadata.min_mem: 256m
+  metadata.max_mem: 450m
+  data.min_mem: 256m
+  data.max_mem: 450m
+  api.min_mem: 64m
+  api.max_mem: 270m
+  webconsole.min_mem: 64m
+  webconsole.max_mem: 270m
