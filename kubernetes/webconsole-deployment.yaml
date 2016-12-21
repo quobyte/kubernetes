@@ -8,11 +8,11 @@ spec:
     metadata:
       labels:
         role: webconsole
-        version: 1.3.6
+        version: 1.3.12
     spec:
       containers:
       - name: quobyte-webconsole
-        image: quay.io/quobyte/quobyte-server:1.3.6
+        image: quay.io/quobyte/quobyte-server:1.3.12
         env:
           - name: QUOBYTE_SERVICE
             value: "webconsole"
@@ -56,7 +56,7 @@ spec:
             memory: "300Mi"
             cpu: "100m"
       - name: quobyte-api
-        image: quay.io/quobyte/quobyte-server:1.3.6
+        image: quay.io/quobyte/quobyte-server:1.3.12
         env:
           - name: QUOBYTE_SERVICE
             value: api
