@@ -4,6 +4,8 @@ The following steps will deploy Quobyte as a cluster-wide `/var/lib/kubelet/plug
 
 ## Prerequisites
 
+### MountFlags
+
 Ensure MountFlags are shared or not set:
 
 ```bash
@@ -21,6 +23,24 @@ EOF
 $ systemctl daemon-reload && systemctl restart docker
 ```
 
+### Fuse.conf
+
+Ensure that on the Host the file `/etc/fuse.conf` exists (below is an example `fuse.conf`). In the minimal Fuse config the line `user_allow_other` is needed:
+
+```bash
+$ cat ./fuse.conf
+# Allow non-root users to specify the allow_other or allow_root mount options.
+user_allow_other
+```
+
+**Attention**
+
+If `/etc/fuse.conf` is missing on the host the default config from the Quobyte Clien Pod will be copied onto the host.
+
+### NTP
+
+Ensure that ntp is running on all of your nodes hosting any Quobyte service otherwise this can lead to a non working cluster.
+
 ## Starting the Quobyte Components
 
 ### Create "quobyte" Namespace
@@ -28,6 +48,8 @@ $ systemctl daemon-reload && systemctl restart docker
 ```bash
 $ kubectl create -f quobyte-ns.yaml
 ```
+
+**Additional**
 
 Set the default namespace of `kubectl` to the quobyte namespace:
 
@@ -70,10 +92,10 @@ Now start the deployment for the registry:
 $ kubectl create -f registry-ds.yaml
 ```
 
-Wait until the pod is up now you can label other nodes as `registry` to add additional Quobyty registries.
+Wait until the pod is up now you can label other nodes as `registry` to add additional Quobyte registries.
 
 ```bash
-$ kubectl get po --watch
+$ kubectl -n quobyte get po --watch
 ```
 
 The DaemonSet will automatically deploy a `registry` on these nodes:
@@ -93,13 +115,13 @@ Wait that all devices are up, e.g. by
 ```bash
 $ kubectl create -f qmgmt-pod.yaml
 
-$ kubectl exec -it qmgmt-pod -- qmgmt -u api:7860 device list
+$ kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api:7860 device list
 Id  Host                                      Mode                   Disk Used  Disk Avail  Services
  1  registry-21ndb                            ONLINE                      4 GB       17 GB  REGISTRY
  2  registry-5gtgz                            ONLINE                      4 GB       17 GB  REGISTRY
  3  registry-irvss                            ONLINE                      4 GB       17 GB  REGISTRY
 
-$ kubectl exec -it qmgmt-pod -- qmgmt -u api:7860 registry list
+$ kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api:7860 registry list
 Id  Host                                         Mode
 *   1  registry-21ndb                            ONLINE
  2  registry-5gtgz                               ONLINE
@@ -125,7 +147,7 @@ $ kubectl create -f metadata-ds.yaml
 Wait that all devices are up with the upper `kubectl exec` command and check all services:
 
 ```bash
-$ kubectl exec -it qmgmt-pod -- qmgmt -u api:7860 service list
+$ kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api:7860 service list
 Name                                      Type             UUID
 data-6bdhe                                Data (D)         47638429-f0ed-4ea7-8f12-2452b17cde72
 data-94uc7                                Data (D)         c307c3fc-c7fd-45e8-a3ef-2e24ecfb23d8
@@ -145,7 +167,7 @@ webconsole-3666637658-xwblz               Web Console      b5e35998-0ed4-4c31-a2
 Create a volume `cluster`:
 
 ```bash
-$ kubectl exec -it qmgmt-pod -- qmgmt -u api:7860 volume create testVolume root root BASE 0777
+$ kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api:7860 volume create testVolume root root BASE 0777
 ```
 
 Then you can mount all volumes on each node at `/var/lib/kubelet/plugins/kubernetes.io~quobyte` (default plugin directory) using the client daemonset:

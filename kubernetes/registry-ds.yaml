@@ -24,14 +24,10 @@ spec:
               value: "7876"
             - name: QUOBYTE_REGISTRY
               value: registry
-            - name: POD_NAME
+            - name: NODENAME
               valueFrom:
                 fieldRef:
-                  fieldPath: metadata.name
-            - name: HOST_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
+                  fieldPath: spec.nodeName
             - name: QUOBYTE_EXTRA_SERVICE_CONFIG
               value: >
                 constants.automation.manage_registry_replicas=true
@@ -48,12 +44,15 @@ spec:
           ports:
             - name: rpc-tcp
               containerPort: 7866
+              hostPort: 7866
               protocol: TCP
             - name: rpc-udp
               containerPort: 7866
+              hostPort: 7866
               protocol: UDP
             - name: http
               containerPort: 7876
+              hostPort: 7876
               protocol: TCP
           volumeMounts:
             - name: devices
@@ -62,12 +61,13 @@ spec:
             - /bin/bash
             - -xec
             - |
+              hostname $NODENAME
               sed "s/.*MIN_MEM_REGISTRY=.*/MIN_MEM_REGISTRY=${MIN_MEM}/" -i /etc/default/quobyte
               sed "s/.*MAX_MEM_REGISTRY=.*/MAX_MEM_REGISTRY=${MAX_MEM}/" -i /etc/default/quobyte
               if [ ! -f /devices/dev1/QUOBYTE_DEV_SETUP ]; then
                 mkdir -p /devices/dev1
                 cat > /devices/dev1/QUOBYTE_DEV_SETUP <<EOF
-              device.serial=${POD_NAME}-$(uuidgen)
+              device.serial=$(uuidgen)
               device.model=Kubernetes-hostDir
               device.type=DIR_DEVICE
               EOF

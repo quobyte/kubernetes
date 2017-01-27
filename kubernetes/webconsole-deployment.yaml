@@ -22,14 +22,6 @@ spec:
             value: registry:7866
           - name: QUOBYTE_API
             value: api:7860
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: HOST_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
           - name: MAX_MEM
             valueFrom:
               configMapKeyRef:
@@ -66,14 +58,6 @@ spec:
             value: registry:7866
           - name: QUOBYTE_LOG_LEVEL
             value: DEBUG
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: HOST_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
           - name: MAX_MEM
             valueFrom:
               configMapKeyRef:
