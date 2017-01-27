@@ -18,8 +18,14 @@ spec:
           - -xec
           - |
             ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7866"}') | tr ' ' ,)
+            if [[ ! -f /rootfs/etc/fuse.conf ]]; then
+              echo "Copy fuse config to host"
+              { echo -e '# Copied from Quobyte Client Container\n'; cat /etc/fuse.conf; } > /rootfs/etc/fuse.conf
+            fi
+            if [[ $(grep "^[^#]" /rootfs/etc/fuse.conf  | grep -c "user_allow_other" /rootfs/etc/fuse.conf) -eq 0 ]]; then
+              echo "user_allow_other" >> /rootfs/etc/fuse.conf
+            fi
             if cut -d" " -f2 /etc/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
-              # test this case
               OPTS="-o remount"
             else
               mkdir -p ${QUOBYTE_MOUNT_POINT}
@@ -27,7 +33,7 @@ spec:
             /bin/nsenter -t 1 --wd=. -m -- \
               lib/ld-linux-x86-64.so.2 \
               --library-path ./lib \
-            ./bin/mount.quobyte --allow-usermapping-in-volumename -f -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
+            ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename -f -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
         securityContext:
           privileged: true
         env:
@@ -39,6 +45,10 @@ spec:
             value: registry
           - name: QUOBYTE_MOUNT_POINT
             value: /var/lib/kubelet/plugins/kubernetes.io~quobyte
+          - name: NODENAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
         ports:
           - name: http-port
             containerPort: 55000
