@@ -3,17 +3,21 @@ kind: Service
 metadata:
   name: registry
   namespace: quobyte
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/prometheus'
+    prometheus.io/port: '7871'
 spec:
   clusterIP: "None" # headless service => kube-dns will return pod IPs
   ports:
     - name: quobyte # available as _quobyte._tcp.registry via DNS
-      port: 7866
+      port: 7861
       protocol: TCP
     - name: rpc-udp
-      port: 7866
+      port: 7861
       protocol: UDP
     - name: http
-      port: 7876
+      port: 7871
       protocol: TCP
   selector:
     role: registry

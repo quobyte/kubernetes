@@ -6,24 +6,26 @@ metadata:
 spec:
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/prometheus'
+        prometheus.io/port: '7872'
       labels:
         role: metadata
-        version: 1.3.12
+        version: 1.3.15
     spec:
       containers:
       - name: quobyte-metadata
-        image: quay.io/quobyte/quobyte-server:1.3.12
+        image: quay.io/quobyte/quobyte-server:1.3.15
         securityContext:
-          privileged: true
+          capabilities:
+            add:
+              - SYS_RESOURCE
         env:
           - name: QUOBYTE_SERVICE
             value: metadata
           - name: QUOBYTE_REGISTRY
             value: registry
-          - name: NODENAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
           - name: MAX_MEM
             valueFrom:
               configMapKeyRef:
@@ -38,25 +40,46 @@ spec:
           - /bin/bash
           - -xec
           - |
-            hostname $NODENAME
             sed "s/.*MIN_MEM_METADATA=.*/MIN_MEM_METADATA=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/.*MAX_MEM_METADATA=.*/MAX_MEM_METADATA=${MAX_MEM}/" -i /etc/default/quobyte
-            if [ ! -f /devices/metadata/QUOBYTE_DEV_SETUP ]; then
-              mkdir -p /devices/metadata
-              cat >/devices/metadata/QUOBYTE_DEV_SETUP <<EOF
+            if [ ! "$(ls -A /devices)" ] && [ ! -f /devices/QUOBYTE_DEV_SETUP ]; then
+              mkdir -p /devices
+              cat >/devices/QUOBYTE_DEV_SETUP <<EOF
             device.serial=$(uuidgen)
             device.model=Kubernetes-hostDir
             device.type=METADATA_DEVICE
             EOF
             fi
+
+            if [ ! -f /devices/UUID ]; then
+              echo uuid=$(uuidgen) >> /devices/UUID
+            fi
+
+            cat /devices/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+
             exec /bin/bash -x /opt/main.sh
         volumeMounts:
           - name: devices
-            mountPath: /devices/metadata
+            mountPath: /devices
         resources:
           limits:
             memory: "512Mi"
             cpu: "200m"
+        ports:
+          - name: rpc-tcp
+            containerPort: 7872
+            protocol: TCP
+        readinessProbe:
+          timeoutSeconds: 5
+          httpGet:
+            port: 7872
+            path: /
+        livenessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          httpGet:
+            port: 7872
+            path: /
       nodeSelector:
         quobyte_metadata: "true"
       volumes:
