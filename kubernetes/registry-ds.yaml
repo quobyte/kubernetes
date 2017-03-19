@@ -8,26 +8,20 @@ spec:
     metadata:
       labels:
         role: registry
-        version: 1.3.12
+        version: 1.3.15
     spec:
       containers:
         - name: quobyte-registry
-          image: quay.io/quobyte/quobyte-server:1.3.12
+          image: quay.io/quobyte/quobyte-server:1.3.15
           securityContext:
-            privileged: true
+            capabilities:
+              add:
+                - SYS_RESOURCE
           env:
             - name: QUOBYTE_SERVICE
               value: registry
-            - name: QUOBYTE_RPC_PORT
-              value: "7866"
-            - name: QUOBYTE_HTTP_PORT
-              value: "7876"
             - name: QUOBYTE_REGISTRY
               value: registry
-            - name: NODENAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
             - name: QUOBYTE_EXTRA_SERVICE_CONFIG
               value: >
                 constants.automation.manage_registry_replicas=true
@@ -43,16 +37,13 @@ spec:
                   key: registry.min_mem
           ports:
             - name: rpc-tcp
-              containerPort: 7866
-              hostPort: 7866
+              containerPort: 7861
               protocol: TCP
             - name: rpc-udp
-              containerPort: 7866
-              hostPort: 7866
+              containerPort: 7861
               protocol: UDP
             - name: http
-              containerPort: 7876
-              hostPort: 7876
+              containerPort: 7871
               protocol: TCP
           volumeMounts:
             - name: devices
@@ -61,9 +52,10 @@ spec:
             - /bin/bash
             - -xec
             - |
-              hostname $NODENAME
               sed "s/.*MIN_MEM_REGISTRY=.*/MIN_MEM_REGISTRY=${MIN_MEM}/" -i /etc/default/quobyte
               sed "s/.*MAX_MEM_REGISTRY=.*/MAX_MEM_REGISTRY=${MAX_MEM}/" -i /etc/default/quobyte
+              # TODO if directory is not empty skip (disk is mounted)
+              # [ ! "$(ls -A /devices)" ] &&
               if [ ! -f /devices/dev1/QUOBYTE_DEV_SETUP ]; then
                 mkdir -p /devices/dev1
                 cat > /devices/dev1/QUOBYTE_DEV_SETUP <<EOF
@@ -75,6 +67,12 @@ spec:
                   echo "device.bootstrap=true" >> /devices/dev1/QUOBYTE_DEV_SETUP
                 fi
               fi
+
+              if [ ! -f /devices/dev1/UUID ]; then
+                echo uuid=$(uuidgen) >> /devices/dev1/UUID
+              fi
+
+              cat /devices/dev1/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
 
               exec /bin/bash -x /opt/main.sh
           resources:
@@ -88,13 +86,13 @@ spec:
           readinessProbe:
             timeoutSeconds: 5
             httpGet:
-              port: 7876
+              port: 7871
               path: /
           livenessProbe:
             initialDelaySeconds: 30
             timeoutSeconds: 5
             httpGet:
-              port: 7876
+              port: 7871
               path: /
       nodeSelector:
         quobyte_registry: "true"
