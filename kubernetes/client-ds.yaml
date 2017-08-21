@@ -21,7 +21,6 @@ spec:
           - /bin/sh
           - -xec
           - |
-            ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
             if [[ ! -f /etcfs/fuse.conf ]]; then
               echo "Copy fuse config to host"
               { echo -e '# Copied from Quobyte Client Container\n'; cat /etc/fuse.conf; } > /etcfs/fuse.conf
@@ -30,14 +29,16 @@ spec:
               echo "user_allow_other" >> /etcfs/fuse.conf
             fi
             if cut -d" " -f2 /etcfs/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
-              fusermount -u ${QUOBYTE_MOUNT_POINT}
+              umount ${QUOBYTE_MOUNT_POINT}
             else
               mkdir -p ${QUOBYTE_MOUNT_POINT}
             fi
             /bin/nsenter -t 1 --wd=. -m -- \
               lib/ld-linux-x86-64.so.2 \
               --library-path ./lib \
-            ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename --http-port 55000 -f -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
+            ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename \
+              --http-port 55000 -f -l /dev/stdout -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} \
+              ${QUOBYTE_REGISTRY}/ ${QUOBYTE_MOUNT_POINT}
         securityContext:
           privileged: true
         env:
