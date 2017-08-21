@@ -30,7 +30,7 @@ spec:
               echo "user_allow_other" >> /etcfs/fuse.conf
             fi
             if cut -d" " -f2 /etcfs/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
-              fusermount -u ${QUOBYTE_MOUNT_POINT}
+              umount ${QUOBYTE_MOUNT_POINT}
             else
               mkdir -p ${QUOBYTE_MOUNT_POINT}
             fi
