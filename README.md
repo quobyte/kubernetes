@@ -1,19 +1,10 @@
-Scripts and tools for deploying Quobyte installations
+Scripts and tools for deploying Quobyte on Kubernetes
 =====================================================
 
 Currently contains:
- * **Ansible** script for AWS deployments
+ * **demo** Vagrant file for local demo cluster and kubespray based k8s cluster bootstrap
  * device initialization tools: **qbootstrap** and **qmkdev**
- * **Kubernetes** specification files for Quobyte on Kubernetes
-
-For **Puppet**, please refer to SysEleven's recipes:
-https://github.com/syseleven/puppet-quobyte
-
-Arnold from Inovex maintains a **Saltstack** formula here:
-https://github.com/bechtoldt/saltstack-quobyte-formula
-
-For **Mesos**, please check out our Mesos framework:
-https://github.com/quobyte/mesos-framework
+ * **deploy** Specification files for Quobyte on Kubernetes
 
 For automated **Kubernetes** deployments checkout Quobyte Deployer (community tool):
 https://github.com/johscheuer/quobyte-kubernetes-operator

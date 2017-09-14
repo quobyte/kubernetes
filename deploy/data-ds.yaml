@@ -12,7 +12,7 @@ spec:
         prometheus.io/port: '7873'
       labels:
         role: data
-        version: 1.4
+        version: "1.4"
     spec:
       containers:
       - name: quobyte-metadata
@@ -42,31 +42,21 @@ spec:
           - |
             sed "s/.*MIN_MEM_DATA=.*/MIN_MEM_DATA=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/.*MAX_MEM_DATA=.*/MAX_MEM_DATA=${MAX_MEM}/" -i /etc/default/quobyte
-
-            if [ ! "$(ls -A /devices)" ] && [ ! -f /devices/QUOBYTE_DEV_SETUP ]; then
-              mkdir -p /devices
-              cat >/devices/QUOBYTE_DEV_SETUP <<EOF
-            device.serial=$(uuidgen)
-            device.model=Kubernetes-hostDir
-            device.type=DATA_DEVICE
-            EOF
-            fi
-
-            if [ ! -f /devices/UUID ]; then
-              echo uuid=$(uuidgen) >> /devices/UUID
-            fi
-
-            cat /devices/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
-
             exec /bin/bash -x /opt/main.sh
         volumeMounts:
-          - name: devices
-            mountPath: /devices
+          - mountPath: /dev
+            name: dev
+          - mountPath: /sys/bus
+            name: sysbus
+          - mountPath: /lib/modules
+            name: libmodules
+          - mountPath: /mnt/quobyte
+            name: mnt-quobyte
         resources:
           requests:
             memory: "512Mi"
             cpu: "200m"
-       ports:
+        ports:
           - name: rpc-tcp
             containerPort: 7873
             protocol: TCP
@@ -81,9 +71,20 @@ spec:
           httpGet:
             port: 7873
             path: /
+        securityContext:
+          privileged: true
       nodeSelector:
         quobyte_data: "true"
       volumes:
-      - name: devices
-        hostPath:
-          path: /mnt/data
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: sysbus
+          hostPath:
+            path: /sys/bus
+        - name: libmodules
+          hostPath:
+            path: /lib/modules
+        - name: mnt-quobyte
+          hostPath:
+            path: /mnt/quobyte

@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   labels:
     role: qmgmt-pod
-    version: 1.4
+    version: "1.4"
   name: qmgmt-pod
   namespace: quobyte
 spec:

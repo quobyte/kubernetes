@@ -1,27 +1,39 @@
 #!/bin/bash
-# Copyright 2014 Quobyte Inc.
+# Copyright 2017 Quobyte Inc.
 
 LANG=en_US.utf-8
 DEVICE_ID_FILE="QUOBYTE_DEV_SETUP"
 test -z $SMARTCTL && SMARTCTL=/usr/sbin/smartctl
 
 function print_usage {
-  printf "Usage: %s [-f] [-y] [-s serno] mount_point\n" $(basename $0)
-  echo "Creates a new Quobyte USP bootstrap device on the disk/file system mounted at <mount_point>."
-  echo "-f overwrites any existing device information (dangerous!)."
-  echo "-y do not ask for confirmation."
-  echo "-s serial_number serial number for a device."
+  if [[ "$(basename $0)" == qbootstrap* ]]; then
+    printf "Usage: %s [-f] [-t type] [-s serno] mount_point\n" $(basename $0)
+    echo "Creates a new Quobyte bootstrap device on the disk/file system mounted at <mount_point>."
+    echo "-f overwrites any existing device information (dangerous!)."
+    echo "-s serial_number serial number for a device."
+    echo "-y do not ask for confirmation."
+  else
+    printf "Usage: %s [-f] [-t type] [-s serno] mount_point\n" $(basename $0)
+    echo "Creates a new Quobyte device on the disk/file system mounted at <mount_point>."
+    echo "-f overwrites any existing device information (dangerous!)."
+    echo "-t DATA|METADATA|REGISTRY optional device type"
+    echo "   this device should be used as."
+    echo "-s serial_number serial number for a device."
+  fi
   echo
   exit 2
 }
 
 force_flag=
+type_flag=
 serial_number=
 yes_mode=
-while getopts fys: name
+bootstrap_mode=
+while getopts "fyBhs:t:" name
 do
     case $name in
     f)    force_flag=1;;
+    t)    type_flag="$OPTARG";;
     s)    serial_number="$OPTARG";;
     y)    yes_mode=1;;
     ?)    print_usage;;
@@ -29,20 +41,55 @@ do
 done
 shift $(($OPTIND - 1))
 
-if [ $# -eq 0 ]; then
+if [[ "$(basename $0)" == qbootstrap* ]]
+then
+  bootstrap_mode=1
+fi
+
+if [ $# -ne 1 ]; then
   print_usage
 fi
 
 if [ -n "$EUID" -a $EUID -ne 0 ]; then
-  echo "Error: This programm must be executed as root (requires access to smartctl to read device identity)."
+  echo "Error: This programm must be executed as root (requires access to smartctl/lshw to read device identity)."
   exit 4
 fi
 
-MOUNT_POINT=$(echo "$1"|sed 's/\/$//g')
-echo "Device mount point: ${MOUNT_POINT}"
+MOUNT_POINT="$(readlink -f "$1")"
 
-DEVICE_FILE=${MOUNT_POINT}/${DEVICE_ID_FILE}
-if [ -e ${DEVICE_FILE} ]; then
+if [[ $bootstrap_mode == 1 ]]; then
+  if [[ "$type_flag" != "" ]];then
+    echo "Cannot specify type when creating bootstrap registry device."
+    exit 11
+  fi
+  type_flag="R"
+
+  if [ -z "$yes_mode" ]; then
+    echo "Attention: a bootstrap device must only be created once per Quobyte installation."
+    echo "If you have already created a bootstrap device on any machine, please use qmkdev -t to create further devices."
+    read -p "Are you sure you that you want to make ${MOUNT_POINT} your installation's bootstrap device (y/n)? " -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ ! $REPLY =~ ^[Yy]$ ]]
+    then
+      echo "Cancelled."
+      exit 8
+    fi
+  else
+     echo "Skipping confirmation."
+  fi
+fi
+
+echo "Device mount point: ${MOUNT_POINT}"
+type_flag=$(echo "$type_flag"|awk '{print toupper($0)}')
+if [[ "$type_flag" != "" && "$type_flag" != "REGISTRY" && \
+    "$type_flag" != "METADATA" && "$type_flag" != "DATA" &&\
+    "$type_flag" != "D" && "$type_flag" != "M" && "$type_flag" != "R" ]]; then
+  echo "Error: Invalid device type."
+  exit 10
+fi
+
+DEVICE_FILE="${MOUNT_POINT}/${DEVICE_ID_FILE}"
+if [ -e "${DEVICE_FILE}" ]; then
   if [ -z "$force_flag" ]; then
     echo "Error: Selected mount point is already a Quobyte device."
     echo "       Use -f to overwrite the current device information."
@@ -54,19 +101,31 @@ if [ -e ${DEVICE_FILE} ]; then
   fi
 fi
 
-DEVICE=`grep " ${MOUNT_POINT} " /proc/mounts | cut -d " " -f 1`
-FSTYPE=`grep " ${MOUNT_POINT} " /proc/mounts | cut -d " " -f 3`
+
+escaped="${MOUNT_POINT// /\\040}"
+# Ignore any rootfs mounts.
+lines="$(fgrep " ${escaped} " /proc/mounts | fgrep -v " rootfs ")"
+if [[ "$(wc -l <<<"${lines}")" -gt 1 ]]; then
+  echo "Error: Ambiguous mount point. Multiple matches for ' ${escaped} ' in /proc/mounts."
+  exit 11
+fi
+if [[ "$(cut -d " " -f 2 <<<"${lines}")" != "${escaped}" ]]; then
+  echo "Error: Invalid mount point. ' ${escaped} ' not found in second column of /proc/mounts."
+  exit 11
+fi
+DEVICE="$(cut -d " " -f 1 <<<"${lines}")"
+FSTYPE="$(cut -d " " -f 3 <<<"${lines}")"
 
 if [ -z "${DEVICE}" ]; then
-  echo "Error: Invalid mount point. ' ${MOUNT_POINT} ' not found in /proc/mounts."
+  echo "Error: Invalid mount point. ' ${escaped} ' not found in /proc/mounts."
   exit 11
 fi
 if [ ! -b "${DEVICE}" ]; then
   echo "Error: Invalid mount point. ${DEVICE} is no block device."
   exit 12
 fi
-# NOTE(quobyte): Keep this list in sync with the one in the OSD.
-SUPPORTED_FS_TYPES="ext4 xfs btrfs"
+# NOTE(quobyte): Keep this list in sync with the one in the data service.
+SUPPORTED_FS_TYPES="ext4 xfs"
 supported_fs_found=0
 for expected_fs in $SUPPORTED_FS_TYPES
 do
@@ -82,11 +141,91 @@ fi
 
 echo "Linux device: ${DEVICE}"
 
-DEVICE_MODEL=`$SMARTCTL --info ${DEVICE} | \
-  sed -n 's/Device Model:\s*\(.*\)$/\1/p'`
-if [ -z "$DEVICE_MODEL" ]; then
-  DEVICE_MODEL=`$SMARTCTL --info ${DEVICE} | \
-    sed -n 's/Product:\s*\([-\._a-zA-Z0-9]*\).*/\1/p'`
+smartctl_available() {
+  test -x "$(type -P "${SMARTCTL}")"
+}
+
+set_device_model_smartctl() {
+  local DEVICE="$1"
+  DEVICE_MODEL="$("${SMARTCTL}" --info "${DEVICE}" | \
+    sed -n 's/Device Model:\s*\(.*\)$/\1/p')"
+  if [ -z "$DEVICE_MODEL" ]; then
+    DEVICE_MODEL="$("${SMARTCTL}" --info "${DEVICE}" | \
+      sed -n 's/Product:\s*\([-\._a-zA-Z0-9]*\).*/\1/p')"
+  fi
+}
+
+set_device_serial_smartctl() {
+  local DEVICE="$1"
+  DEVICE_SERIAL="$("${SMARTCTL}" --info "${DEVICE}" | \
+    sed -n 's/Serial.*:\s*\([-\._a-zA-Z0-9]*\).*/\1/p')"
+}
+
+set_device_model_and_serial_lshw() {
+  local device="$1"
+  local lshw="$(type -P "${LSHW:-lshw}" /usr/sbin/lshw /usr/bin/lshw | head -n1)"
+
+  # Parse XML as "lshw -short" output does not contain serial number...
+  local line="$("${lshw}" -quiet -class disk -xml | awk '
+      BEGIN {
+        node_level = 0
+        disk_node_entered_at = -1
+
+        logicalname = ""
+        serial = ""
+        product = ""
+      }
+
+      /^ *<node/ {
+        node_level += 1
+      }
+      /^ *<node .*class="disk"/ {
+        disk_node_entered_at = node_level
+        next
+      }
+
+      /^ *<product>/ {
+        if (node_level == disk_node_entered_at) {
+          product = gensub("^ *<product>([^<]+)</product>", "\\1", 1)
+        }
+        next
+      }
+      /^ *<logicalname>/ {
+        if (node_level == disk_node_entered_at) {
+          logicalname = gensub("^ *<logicalname>([^<]+)</logicalname>", "\\1", 1)
+        }
+        next
+      }
+      /^ *<serial>/ {
+        if (node_level == disk_node_entered_at) {
+          serial = gensub("^ *<serial>([^<]+)</serial>", "\\1", 1)
+        }
+        next
+      }
+
+      /^ *<\/node>/ {
+        if (node_level == disk_node_entered_at) {
+          disk_node_entered_at = -1
+          printf("%s,%s,%s\n", logicalname, serial, product)
+
+          logicalname = ""
+          serial = ""
+          product = ""
+        }
+        node_level -= 1
+      }
+      ' | fgrep "${device}," | head -n1)"
+
+  DEVICE_MODEL="$(cut -d',' -f 3 <<<"${line}")"
+  DEVICE_SERIAL="$(cut -d',' -f 2 <<<"${line}")"
+}
+
+
+if smartctl_available; then
+  set_device_model_smartctl "${DEVICE}"
+else
+  echo "INFO: smartctl not available, falling back to lshw"
+  set_device_model_and_serial_lshw "${DEVICE}"
 fi
 if [ -z "$DEVICE_MODEL" ]; then
   DEVICE_MODEL="unknown"
@@ -98,9 +237,6 @@ if [ -n "$serial_number" ]; then
   echo "Override Serial Number: ${serial_number}"
   DEVICE_SERIAL="${serial_number}"
 else
-  DEVICE_SERIAL=`$SMARTCTL --info ${DEVICE} | \
-    sed -n 's/Serial.*:\s*\([-\._a-zA-Z0-9]*\).*/\1/p'`
-
   if [ $generate_random_serial -eq 0 ]; then
     if [[ "$DEVICE_MODEL" =~ ^QEMU.* ]]; then
       echo "Ignoring pseudo serial number from QEMU device. Generating uuid."
@@ -108,9 +244,12 @@ else
     elif [[ "$DEVICE_MODEL" =~ ^VBOX.* ]]; then
       echo "Ignoring pseudo serial number from VBOX device. Generating uuid."
       generate_random_serial=1
-    elif [ -z "${DEVICE_SERIAL}" ]; then
-      echo "Cannot determine device serial number. Generating uuid."
-      generate_random_serial=1
+    else
+      smartctl_available && set_device_serial_smartctl "${DEVICE}"
+      if [ -z "${DEVICE_SERIAL}" ]; then
+        echo "Cannot determine device serial number. Generating uuid."
+        generate_random_serial=1
+      fi
     fi
   fi
 fi
@@ -127,35 +266,54 @@ if [ $generate_random_serial -eq 1 ]; then
   fi
 fi
 
-if [ -z "$yes_mode" ]; then
-  echo "Attention: a bootstrap device must only be created once per Quobyte installation."
-  echo "If you have already created a bootstrap device on any machine, please use qmkdev to create further devices."
-  read -p "Are you sure you that you want to make ${MOUNT_POINT} your installation's bootstrap device (y/n)? " -n 1 -r
-  echo    # (optional) move to a new line
-  if [[ ! $REPLY =~ ^[Yy]$ ]]
-  then
-    echo "Cancelled."
-    exit 8
+if [[ "$type_flag" == "DATA" || "$type_flag" == "D" ]]; then
+  AVAIL_SPACE=`df -B1 $MOUNT_POINT | grep -v Avail | awk '{ print $4 "\t" }'`
+  AVAIL_SPACE_HR=`df -h $MOUNT_POINT | grep -v Avail | awk '{ print $4 "\t" }' | tr -d '[[:space:]]'`
+  if [ $AVAIL_SPACE -lt 21474836480 ]; then
+    echo "WARNING: $MOUNT_POINT has less than 20G of available space ($AVAIL_SPACE_HR)."
+    echo "Quobyte may refuse to create new files if such devices are used as data devices."
+    echo "We highly recommend to use a device with more capacity!"
   fi
-else
-  echo "Skipping confirmation."
 fi
-  
+
 CREATION_DATE=`date`
 umask 0022
-echo "# Quobyte USP bootstrap device identifier file" > ${DEVICE_FILE}
-echo "# Created ${CREATION_DATE}" >> ${DEVICE_FILE}
-echo "# Hostname: ${HOSTNAME}" >> ${DEVICE_FILE}
-echo "device.serial=${DEVICE_SERIAL}" >> ${DEVICE_FILE}
-echo "device.model=${DEVICE_MODEL}" >> ${DEVICE_FILE}
-echo "device.bootstrap=true" >> ${DEVICE_FILE}
-echo "device.type=DIR_DEVICE" >> ${DEVICE_FILE}
-
-chown quobyte ${DEVICE_FILE}
-chown quobyte ${MOUNT_POINT}
+echo "# Quobyte device identifier file" > "${DEVICE_FILE}"
+echo "# Created ${CREATION_DATE}" >> "${DEVICE_FILE}"
+echo "# Hostname: ${HOSTNAME}" >> "${DEVICE_FILE}"
+echo "device.serial=${DEVICE_SERIAL}" >> "${DEVICE_FILE}"
+echo "device.model=${DEVICE_MODEL}" >> "${DEVICE_FILE}"
+if [ -n "$type_flag" ]; then
+  if [[ "$type_flag" == "METADATA" || "$type_flag" == "M" ]]; then
+    echo "device.type=METADATA_DEVICE" >> "${DEVICE_FILE}"
+  elif [[ "$type_flag" == "DATA" || "$type_flag" == "D" ]]; then
+    echo "device.type=DATA_DEVICE" >> "${DEVICE_FILE}"
+  elif [[ "$type_flag" == "REGISTRY" || "$type_flag" == "R" ]]; then
+    if [[ $bootstrap_mode == 1 ]]; then
+      echo "device.bootstrap=true" >> "${DEVICE_FILE}"
+    fi
+    echo "device.type=DIR_DEVICE" >> "${DEVICE_FILE}"
+  fi
+else
+  echo "No type specified. To use the device, please assign one or more content"
+  echo "types using the qmgmt tool."
+fi
+chown quobyte "${DEVICE_FILE}"
+chown quobyte "${MOUNT_POINT}"
 if [[ $? != 0 ]]; then
   echo "WARNING: Cannot change ownership of mount point, please make sure Quobyte services"
   echo "         can write to the mount point!"
 fi
 
-echo "Bootstrap device successfully initialized."
+if [ "$FSTYPE" = "ext4" ]; then
+  tune2fs >/dev/null -m 0 "${DEVICE}"
+fi
+
+if [[ $bootstrap_mode == 1 ]]; then
+  echo "Bootstrap device successfully initialized."
+else
+  echo "Device successfully initialized."
+fi
+echo
+echo "If this device is mounted on a host with a running Quobyte service, "
+echo "the device will be registered automatically."

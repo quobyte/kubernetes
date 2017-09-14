@@ -12,7 +12,7 @@ spec:
         prometheus.io/port: '7872'
       labels:
         role: metadata
-        version: 1.4
+        version: "1.4"
     spec:
       containers:
       - name: quobyte-metadata
@@ -42,25 +42,16 @@ spec:
           - |
             sed "s/.*MIN_MEM_METADATA=.*/MIN_MEM_METADATA=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/.*MAX_MEM_METADATA=.*/MAX_MEM_METADATA=${MAX_MEM}/" -i /etc/default/quobyte
-            if [ ! "$(ls -A /devices)" ] && [ ! -f /devices/QUOBYTE_DEV_SETUP ]; then
-              mkdir -p /devices
-              cat >/devices/QUOBYTE_DEV_SETUP <<EOF
-            device.serial=$(uuidgen)
-            device.model=Kubernetes-hostDir
-            device.type=METADATA_DEVICE
-            EOF
-            fi
-
-            if [ ! -f /devices/UUID ]; then
-              echo uuid=$(uuidgen) >> /devices/UUID
-            fi
-
-            cat /devices/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
-
             exec /bin/bash -x /opt/main.sh
         volumeMounts:
-          - name: devices
-            mountPath: /devices
+          - mountPath: /dev
+            name: dev
+          - mountPath: /sys/bus
+            name: sysbus
+          - mountPath: /lib/modules
+            name: libmodules
+          - mountPath: /mnt/quobyte
+            name: mnt-quobyte
         resources:
           limits:
             memory: "512Mi"
@@ -80,9 +71,20 @@ spec:
           httpGet:
             port: 7872
             path: /
+        securityContext:
+          privileged: true
       nodeSelector:
         quobyte_metadata: "true"
       volumes:
-      - name: devices
-        hostPath:
-          path: /mnt/metadata
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: sysbus
+          hostPath:
+            path: /sys/bus
+        - name: libmodules
+          hostPath:
+            path: /lib/modules
+        - name: mnt-quobyte
+          hostPath:
+            path: /mnt/quobyte

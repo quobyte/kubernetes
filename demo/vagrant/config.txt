@@ -1,0 +1,44 @@
+Host qb1
+  HostName 127.0.0.1
+  User vagrant
+  Port 2222
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  IdentityFile /home/meatz/Desktop/quobernetes/git/examples/vagrant/.vagrant/machines/qb1/virtualbox/private_key
+  IdentitiesOnly yes
+  LogLevel FATAL
+
+Host qb2
+  HostName 127.0.0.1
+  User vagrant
+  Port 2200
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  IdentityFile /home/meatz/Desktop/quobernetes/git/examples/vagrant/.vagrant/machines/qb2/virtualbox/private_key
+  IdentitiesOnly yes
+  LogLevel FATAL
+
+Host qb3
+  HostName 127.0.0.1
+  User vagrant
+  Port 2201
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  IdentityFile /home/meatz/Desktop/quobernetes/git/examples/vagrant/.vagrant/machines/qb3/virtualbox/private_key
+  IdentitiesOnly yes
+  LogLevel FATAL
+
+Host qb4
+  HostName 127.0.0.1
+  User vagrant
+  Port 2202
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  IdentityFile /home/meatz/Desktop/quobernetes/git/examples/vagrant/.vagrant/machines/qb4/virtualbox/private_key
+  IdentitiesOnly yes
+  LogLevel FATAL
+

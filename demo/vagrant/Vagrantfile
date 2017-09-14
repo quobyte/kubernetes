@@ -1,0 +1,111 @@
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+
+  config.vm.define "qb1" do |qb1|
+    qb1.vm.box = "centos/7"
+    qb1.vm.hostname = "qb1"
+    qb1.vm.network "private_network", ip: "10.10.0.11",
+      virtualbox__intnet: "qbinternal"
+
+    # use kubectl from your host
+    qb1.vm.network "forwarded_port", guest: 6443, host: 6443
+
+    qb1.vm.provider "virtualbox" do |vb|
+      vb.memory = 4096
+      vb.cpus = 4
+      unless File.exist?('./disks/qb1_data1.vdi')
+        # sort of a hack. if the disk file does not exist, also add the sata controller.
+        vb.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 4]
+        vb.customize ['createhd', '--filename', './disks/qb1_data1.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      unless File.exist?('./disks/qb1_data2.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb1_data2.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      unless File.exist?('./disks/qb1_data3.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb1_data3.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './disks/qb1_data1.vdi']
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', './disks/qb1_data2.vdi']
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 3, '--device', 0, '--type', 'hdd', '--medium', './disks/qb1_data3.vdi']
+    end
+    qb1.vm.provision :shell, path: "bootstrap.sh"
+  end
+
+  config.vm.define "qb2" do |qb2|
+    qb2.vm.box = "centos/7"
+    qb2.vm.hostname = "qb2"
+    qb2.vm.network "private_network", ip: "10.10.0.12",
+      virtualbox__intnet: "qbinternal"
+
+    qb2.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 4
+      unless File.exist?('./disks/qb2_data1.vdi')
+        vb.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 4]
+        vb.customize ['createhd', '--filename', './disks/qb2_data1.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      unless File.exist?('./disks/qb2_data2.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb2_data2.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      unless File.exist?('./disks/qb2_data3.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb2_data3.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './disks/qb2_data1.vdi']
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', './disks/qb2_data2.vdi']
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 3, '--device', 0, '--type', 'hdd', '--medium', './disks/qb2_data3.vdi']
+    end
+    qb2.vm.provision :shell, path: "bootstrap.sh"
+  end
+
+  config.vm.define "qb3" do |qb3|
+    qb3.vm.box = "centos/7"
+    qb3.vm.hostname = "qb3"
+    qb3.vm.network "private_network", ip: "10.10.0.13",
+      virtualbox__intnet: "qbinternal"
+
+    qb3.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 4
+      unless File.exist?('./disks/qb3_data1.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb3_data1.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+        vb.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 4]
+      end
+      unless File.exist?('./disks/qb3_data2.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb3_data2.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      unless File.exist?('./disks/qb3_data3.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb3_data3.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './disks/qb3_data1.vdi']
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', './disks/qb3_data2.vdi']
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 3, '--device', 0, '--type', 'hdd', '--medium', './disks/qb3_data3.vdi']
+    end
+    qb3.vm.provision :shell, path: "bootstrap.sh"
+  end
+
+  config.vm.define "qb4" do |qb4|
+    qb4.vm.box = "centos/7"
+    qb4.vm.hostname = "qb4"
+    qb4.vm.network "private_network", ip: "10.10.0.14",
+      virtualbox__intnet: "qbinternal"
+
+    qb4.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 4
+      unless File.exist?('./disks/qb4_data1.vdi')
+        vb.customize ['storagectl', :id, '--name', 'SATA Controller', '--add', 'sata', '--portcount', 4]
+        vb.customize ['createhd', '--filename', './disks/qb4_data1.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      unless File.exist?('./disks/qb4_data2.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb4_data2.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      unless File.exist?('./disks/qb4_data3.vdi')
+        vb.customize ['createhd', '--filename', './disks/qb4_data3.vdi', '--variant', 'Standard', '--size', 20 * 1024]
+      end
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './disks/qb4_data1.vdi']
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 2, '--device', 0, '--type', 'hdd', '--medium', './disks/qb4_data2.vdi']
+      vb.customize ['storageattach', :id,  '--storagectl', 'SATA Controller', '--port', 3, '--device', 0, '--type', 'hdd', '--medium', './disks/qb4_data3.vdi']
+    end
+    qb4.vm.provision :shell, path: "bootstrap.sh"
+  end
+end

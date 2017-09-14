@@ -8,7 +8,7 @@ spec:
     metadata:
       labels:
         role: registry
-        version: 1.4
+        version: "1.4"
     spec:
       containers:
         - name: quobyte-registry
@@ -47,42 +47,11 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: devices
-              mountPath: /devices/dev1
-          command:
-            - /bin/bash
-            - -xec
-            - |
-              sed "s/.*MIN_MEM_REGISTRY=.*/MIN_MEM_REGISTRY=${MIN_MEM}/" -i /etc/default/quobyte
-              sed "s/.*MAX_MEM_REGISTRY=.*/MAX_MEM_REGISTRY=${MAX_MEM}/" -i /etc/default/quobyte
-              # TODO if directory is not empty skip (disk is mounted)
-              # [ ! "$(ls -A /devices)" ] &&
-              if [ ! -f /devices/dev1/QUOBYTE_DEV_SETUP ]; then
-                mkdir -p /devices/dev1
-                cat > /devices/dev1/QUOBYTE_DEV_SETUP <<EOF
-              device.serial=$(uuidgen)
-              device.model=Kubernetes-hostDir
-              device.type=DIR_DEVICE
-              EOF
-                if [ $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | wc -l) == 0 ]; then
-                  echo "device.bootstrap=true" >> /devices/dev1/QUOBYTE_DEV_SETUP
-                fi
-              fi
-
-              if [ ! -f /devices/dev1/UUID ]; then
-                echo uuid=$(uuidgen) >> /devices/dev1/UUID
-              fi
-
-              cat /devices/dev1/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
-
-              exec /bin/bash -x /opt/main.sh
+              mountPath: /mnt/quobyte/
           resources:
             limits:
               memory: "512Mi"
               cpu: "100m"
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/bash", "-xc", "qmgmt -u api registry remove $(grep device.id= /devices/dev1/QUOBYTE_DEV_ID | cut -d= -f2)"]
           readinessProbe:
             timeoutSeconds: 5
             httpGet:
@@ -99,4 +68,4 @@ spec:
       volumes:
       - name: devices
         hostPath:
-          path: /mnt/registry
+          path: /mnt/quobyte/
