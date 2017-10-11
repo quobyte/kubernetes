@@ -26,7 +26,7 @@ spec:
               echo "Copy fuse config to host"
               { echo -e '# Copied from Quobyte Client Container\n'; cat /etc/fuse.conf; } > /etcfs/fuse.conf
             fi
-            if [[ $(grep "^[^#]" /etcfs/fuse.conf  | grep -c "user_allow_other" /etcfs/fuse.conf) -eq 0 ]]; then
+            if [[ $(grep "^[^#]" /etcfs/fuse.conf | grep -c "user_allow_other") -eq 0 ]]; then
               echo "user_allow_other" >> /etcfs/fuse.conf
             fi
             if cut -d" " -f2 /etcfs/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
