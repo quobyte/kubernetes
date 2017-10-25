@@ -18,6 +18,7 @@ spec:
       - name: quobyte-client
         image: quay.io/quobyte/quobyte-client:1.4
         imagePullPolicy: Always
+        # NOTE(kaisers): The weird if check before mkdir -p is required to not hang on a stale mount
         command:
           - /bin/sh
           - -xec
@@ -32,7 +33,10 @@ spec:
             if cut -d" " -f2 /etcfs/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
               umount ${QUOBYTE_MOUNT_POINT}
             else
-              mkdir -p ${QUOBYTE_MOUNT_POINT}
+              if ! [[ $(ls `dirname ${QUOBYTE_MOUNT_POINT}`|egrep "^`basename ${QUOBYTE_MOUNT_POINT}`$") ]]; then
+                echo "mount point ${QUOBYTE_MOUNT_POINT} does not exist, creating it..."
+                mkdir -p ${QUOBYTE_MOUNT_POINT}
+              fi
             fi
 
             # Currently, within the nsenter, k8s dns names cannot be resolved.
@@ -53,7 +57,8 @@ spec:
           - name: QUOBYTE_REGISTRY
             value: registry.quobyte
           - name: QUOBYTE_MOUNT_POINT
-            value: /var/lib/kubelet/plugins/kubernetes.io~quobyte
+            # Note(kaisers): the mount point has to be a subdir of the volume(Mount)
+            value: /var/lib/kubelet/plugins/kubernetes.io~quobyte/mnt
           - name: NODENAME
             valueFrom:
               fieldRef:
@@ -76,20 +81,20 @@ spec:
             path: /
         volumeMounts:
           - name: k8s-plugin-dir
-            mountPath: /var/lib/kubelet/plugins
+            mountPath: /var/lib/kubelet/plugins/kubernetes.io~quobyte
           - name: etcfs
             mountPath: /etcfs
         lifecycle:
           preStop:
             exec:
-              command: ["/bin/bash", "-xc", "umount -f ${QUOBYTE_MOUNT_POINT}"]
+              command: ["/bin/sh", "-xc", "/bin/nsenter -t 1 --wd=. -m -- lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/umount -f ${QUOBYTE_MOUNT_POINT}"]
       hostPID: true
       nodeSelector:
         quobyte_client: "true"
       volumes:
       - name: k8s-plugin-dir
         hostPath:
-          path: /var/lib/kubelet/plugins
+          path: /var/lib/kubelet/plugins/kubernetes.io~quobyte
       - name: etcfs
         hostPath:
           path: /etc
