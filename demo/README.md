@@ -22,7 +22,7 @@ we're good to apply some kubespray.
 
 ```bash
 $ cd demo/kubespray
-$ ./clone_kubespray
+$ ./clone_kubespray.sh
 $ ./ansible_cluster.sh
 ```
 
