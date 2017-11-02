@@ -58,7 +58,7 @@ spec:
             value: registry.quobyte
           - name: QUOBYTE_MOUNT_POINT
             # Note(kaisers): the mount point has to be a subdir of the volume(Mount)
-            value: /var/lib/kubelet/plugins/kubernetes.io~quobyte/mnt
+            value: /var/lib/kubelet/plugins/kubernetes.io~quobyte
           - name: NODENAME
             valueFrom:
               fieldRef:
