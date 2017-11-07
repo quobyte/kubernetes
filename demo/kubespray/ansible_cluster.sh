@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ansible-playbook kubespray/cluster.yml -i inventory/vagrant -b -v
+ansible-playbook ./kubespray/kubespray/cluster.yml -i ./kubespray/inventory/vagrant -b -v

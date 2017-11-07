@@ -3,9 +3,8 @@
 For a fast demo setup, we use a Vagrant based 4-machine cluster, where each server has additional 3 disk drives attached.
 
 ```bash
-$ cd examples/vagrant
-$ vagrant up
-$ vagrant ssh-config
+$ VAGRANT_CWD=./vagrant vagrant up
+$ VAGRANT_CWD=./vagrant vagrant ssh-config
 ```
 
 We use kubespray to bootstrap and setup the Kubernetes cluster.
@@ -15,15 +14,14 @@ Please make sure that the *ansible_port* and *ansible_ssh_private_key_file* matc
 
 If the 4 machines are running and you are able to connect to them like:
 ```bash
-$ cd examples/vagrant
-$ vagrant ssh qb1
+$ VAGRANT_CWD=./vagrant vagrant ssh qb1
 ```
+
 we're good to apply some kubespray.
 
 ```bash
-$ cd examples/kubespray
-$ ./clone_kubespray
-$ ./ansible_cluster.sh
+$ ./kubespray/clone_kubespray.sh
+$ ./kubespray/ansible_cluster.sh
 ```
 
 Make sure that `kubectl` [is installed](https://kubernetes.io/docs/tasks/tools/install-kubectl/ "Install and Set Up kubectl") on your machine.
@@ -32,10 +30,9 @@ To configure and use your newly created cluster, you can run:
 
 ```bash
 $ mkdir -p $HOME/.kube/certs/qb
-$ cd examples/vagrant/
-$ vagrant ssh qb1 -- -t sudo cat /etc/kubernetes/ssl/admin-qb1.pem > $HOME/.kube/certs/qb/qb-admin.pem
-$ vagrant ssh qb1 -- -t sudo cat /etc/kubernetes/ssl/admin-qb1-key.pem > $HOME/.kube/certs/qb/qb-admin-key.pem
-$ vagrant ssh qb1 -- -t sudo cat /etc/kubernetes/ssl/ca.pem > $HOME/.kube/certs/qb/qb-ca.pem
+$ VAGRANT_CWD=./vagrant vagrant ssh qb1 -- -t sudo cat /etc/kubernetes/ssl/admin-qb1.pem > $HOME/.kube/certs/qb/qb-admin.pem
+$ VAGRANT_CWD=./vagrant vagrant ssh qb1 -- -t sudo cat /etc/kubernetes/ssl/admin-qb1-key.pem > $HOME/.kube/certs/qb/qb-admin-key.pem
+$ VAGRANT_CWD=./vagrant vagrant ssh qb1 -- -t sudo cat /etc/kubernetes/ssl/ca.pem > $HOME/.kube/certs/qb/qb-ca.pem
 
 $ kubectl config set-credentials qb-admin \
   --certificate-authority=$HOME/.kube/certs/qb/qb-ca.pem \
