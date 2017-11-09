@@ -38,9 +38,12 @@ spec:
                 mkdir -p ${QUOBYTE_MOUNT_POINT}
               fi
             fi
-
-            # Currently, within the nsenter, k8s dns names cannot be resolved.
-            ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
+            if [[ ${QUOBYTE_REGISTRY} == *","* ]]; then
+              ADDR=${QUOBYTE_REGISTRY}
+            else
+              # Currently, within the nsenter, k8s dns names cannot be resolved.
+              ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
+            fi
             echo "QUOBYTE_REGISTRY: ${ADDR}"
 
             /bin/nsenter -t 1 --wd=. -m -- \
