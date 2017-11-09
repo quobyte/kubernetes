@@ -38,7 +38,7 @@ spec:
                 mkdir -p ${QUOBYTE_MOUNT_POINT}
               fi
             fi
-            if [[ ${QUOBYTE_REGISTRY} == *","* ]]; then
+            if echo ${QUOBYTE_REGISTRY} | grep -q ","; then
               # registries are outside the k8s cluster, pass through and DNS lookup later
               ADDR=${QUOBYTE_REGISTRY}
             else
