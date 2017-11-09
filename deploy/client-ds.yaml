@@ -39,6 +39,7 @@ spec:
               fi
             fi
             if [[ ${QUOBYTE_REGISTRY} == *","* ]]; then
+              # registries are outside the k8s cluster, pass through and DNS lookup later
               ADDR=${QUOBYTE_REGISTRY}
             else
               # Currently, within the nsenter, k8s dns names cannot be resolved.
