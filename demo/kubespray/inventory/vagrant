@@ -1,7 +1,7 @@
-qb1 ansible_host=127.0.0.1 ansible_user=vagrant ansible_port=2222 access_ip=10.10.0.11 ip=10.10.0.11 ansible_ssh_private_key_file=../vagrant/.vagrant/machines/qb1/virtualbox/private_key ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-qb2 ansible_host=127.0.0.1 ansible_user=vagrant ansible_port=2200 access_ip=10.10.0.12 ip=10.10.0.12 ansible_ssh_private_key_file=../vagrant/.vagrant/machines/qb2/virtualbox/private_key ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-qb3 ansible_host=127.0.0.1 ansible_user=vagrant ansible_port=2201 access_ip=10.10.0.13 ip=10.10.0.13 ansible_ssh_private_key_file=../vagrant/.vagrant/machines/qb3/virtualbox/private_key ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-qb4 ansible_host=127.0.0.1 ansible_user=vagrant ansible_port=2202 access_ip=10.10.0.14 ip=10.10.0.14 ansible_ssh_private_key_file=../vagrant/.vagrant/machines/qb4/virtualbox/private_key ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+qb1 ansible_host=127.0.0.1 ansible_user=vagrant ansible_port=2222 access_ip=10.10.0.11 ip=10.10.0.11 ansible_ssh_private_key_file=./vagrant/.vagrant/machines/qb1/virtualbox/private_key ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+qb2 ansible_host=127.0.0.1 ansible_user=vagrant ansible_port=2200 access_ip=10.10.0.12 ip=10.10.0.12 ansible_ssh_private_key_file=./vagrant/.vagrant/machines/qb2/virtualbox/private_key ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+qb3 ansible_host=127.0.0.1 ansible_user=vagrant ansible_port=2201 access_ip=10.10.0.13 ip=10.10.0.13 ansible_ssh_private_key_file=./vagrant/.vagrant/machines/qb3/virtualbox/private_key ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+qb4 ansible_host=127.0.0.1 ansible_user=vagrant ansible_port=2202 access_ip=10.10.0.14 ip=10.10.0.14 ansible_ssh_private_key_file=./vagrant/.vagrant/machines/qb4/virtualbox/private_key ansible_ssh_common_args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 [kube-master]
 qb1
