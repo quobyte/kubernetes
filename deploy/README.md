@@ -70,8 +70,8 @@ $ sudo ./qbootstrap /mnt/quobyte/data_1
 # and two data devices
 $ curl -O https://raw.githubusercontent.com/quobyte/kubernetes/master/tools/qmkdev
 $ chmod +x qmkdev
-$ sudo ./qmkdev -f -t -s $(uuidgen) DATA /mnt/quobyte/data_2
-$ sudo ./qmkdev -f -t -s $(uuidgen) DATA /mnt/quobyte/data_3
+$ sudo ./qmkdev -f -s $(uuidgen) -t DATA /mnt/quobyte/data_2
+$ sudo ./qmkdev -f -s $(uuidgen) -t DATA /mnt/quobyte/data_3
 ```
 
 On the other 3 machines:
