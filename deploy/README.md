@@ -47,7 +47,7 @@ $ for dev in sdb sdc sdd; do \
 PARTUUID=<PARTUUID from blkid> /mnt/quobyte/data_$i xfs relatime,logbufs=8,logbsize=256k,swalloc,allocsize=131072k
 
 # for SSDs we recommend mount options:
-PARTUUID=<PARTUUID from blkid> /mnt/quobyte/data_$i relatime,nodiscard
+PARTUUID=<PARTUUID from blkid> /mnt/quobyte/data_$i xfs relatime,nodiscard
 ```
 
 When all fstab entries are created, mount the fresh disks with `mount -a`.
