@@ -8,15 +8,17 @@ spec:
     metadata:
       labels:
         role: registry
-        version: "1.4"
+        version: "2.0.pre4"
     spec:
       containers:
         - name: quobyte-registry
-          image: quay.io/quobyte/quobyte-server:1.4
+          image: quay.io/quobyte/quobyte-server:2.0.pre4
+          # securityContext:
+          #   capabilities:
+          #     add:
+          #       - SYS_RESOURCE
           securityContext:
-            capabilities:
-              add:
-                - SYS_RESOURCE
+            privileged: true
           env:
             - name: QUOBYTE_SERVICE
               value: registry
@@ -25,6 +27,7 @@ spec:
             - name: QUOBYTE_EXTRA_SERVICE_CONFIG
               value: >
                 constants.automation.manage_registry_replicas=true
+                constants.healthManager.disable=true
             - name: MAX_MEM
               valueFrom:
                 configMapKeyRef:
@@ -46,8 +49,17 @@ spec:
               containerPort: 7871
               protocol: TCP
           volumeMounts:
-            - name: devices
-              mountPath: /mnt/quobyte/
+            - mountPath: /dev
+              name: dev
+            - mountPath: /sys/bus
+              name: sysbus
+            - mountPath: /lib/modules
+              name: libmodules
+            - mountPath: /var/lib/quobyte
+              name: var-lib-quobyte
+              mountPropagation: Bidirectional
+            - mountPath: /mnt/quobyte
+              name: mnt-quobyte
           resources:
             limits:
               memory: "512Mi"
@@ -66,6 +78,18 @@ spec:
       nodeSelector:
         quobyte_registry: "true"
       volumes:
-      - name: devices
-        hostPath:
-          path: /mnt/quobyte/
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: sysbus
+          hostPath:
+            path: /sys/bus
+        - name: libmodules
+          hostPath:
+            path: /lib/modules
+        - name: mnt-quobyte
+          hostPath:
+            path: /mnt/quobyte
+        - name: var-lib-quobyte
+          hostPath:
+            path: /var/lib/quobyte

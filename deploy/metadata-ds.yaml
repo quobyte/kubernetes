@@ -12,11 +12,11 @@ spec:
         prometheus.io/port: '7872'
       labels:
         role: metadata
-        version: "1.4"
+        version: "2.0.pre4"
     spec:
       containers:
       - name: quobyte-metadata
-        image: quay.io/quobyte/quobyte-server:1.4
+        image: quay.io/quobyte/quobyte-server:2.0.pre4
         securityContext:
           capabilities:
             add:
@@ -52,10 +52,13 @@ spec:
             name: libmodules
           - mountPath: /mnt/quobyte
             name: mnt-quobyte
+          - mountPath: /var/lib/quobyte
+            name: var-lib-quobyte
+            mountPropagation: Bidirectional
         resources:
           limits:
-            memory: "512Mi"
-            cpu: "200m"
+            memory: "1212Mi"
+            # cpu: "200m"
         ports:
           - name: rpc-tcp
             containerPort: 7872
@@ -88,3 +91,6 @@ spec:
         - name: mnt-quobyte
           hostPath:
             path: /mnt/quobyte
+        - name: var-lib-quobyte
+          hostPath:
+            path: /var/lib/quobyte
