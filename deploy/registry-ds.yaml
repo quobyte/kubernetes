@@ -13,12 +13,12 @@ spec:
       containers:
         - name: quobyte-registry
           image: quay.io/quobyte/quobyte-server:2.0.pre4
-          # securityContext:
-          #   capabilities:
-          #     add:
-          #       - SYS_RESOURCE
           securityContext:
-            privileged: true
+            capabilities:
+              add:
+                - SYS_RESOURCE
+          # securityContext:
+          #   privileged: true
           env:
             - name: QUOBYTE_SERVICE
               value: registry
@@ -27,7 +27,6 @@ spec:
             - name: QUOBYTE_EXTRA_SERVICE_CONFIG
               value: >
                 constants.automation.manage_registry_replicas=true
-                constants.healthManager.disable=true
             - name: MAX_MEM
               valueFrom:
                 configMapKeyRef:

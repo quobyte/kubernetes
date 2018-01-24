@@ -21,6 +21,8 @@ spec:
           capabilities:
             add:
               - SYS_RESOURCE
+                # securityContext:
+                #   privileged: true
         env:
           - name: QUOBYTE_SERVICE
             value: metadata
@@ -74,8 +76,6 @@ spec:
           httpGet:
             port: 7872
             path: /
-        securityContext:
-          privileged: true
       nodeSelector:
         quobyte_metadata: "true"
       volumes:

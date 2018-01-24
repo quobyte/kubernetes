@@ -21,6 +21,8 @@ spec:
           capabilities:
             add:
               - SYS_RESOURCE
+        # securityContext:
+        #   privileged: true
         env:
           - name: QUOBYTE_SERVICE
             value: data
@@ -74,8 +76,6 @@ spec:
           httpGet:
             port: 7873
             path: /
-        securityContext:
-          privileged: true
       nodeSelector:
         quobyte_data: "true"
       volumes:

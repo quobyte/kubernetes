@@ -92,6 +92,8 @@ Hence, we first set up all these devices as REGISTRY, and later upgrade them
 to also host METADATA.
 
 #### MountFlags
+If you use Docker 1.12 or older, you need to  add the MountFlags parameter.
+For newer versions of Docker, this is not required anymore.
 
 Ensure MountFlags are shared or not set:
 ```bash
@@ -111,7 +113,6 @@ $ systemctl daemon-reload && systemctl restart docker
 #### NTP
 
 Ensure that ntp is running on all of your nodes hosting any Quobyte service otherwise this can lead to a non working cluster.
-
 
 ## Starting the Quobyte Components
 

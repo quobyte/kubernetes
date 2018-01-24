@@ -53,13 +53,10 @@ format)
 HOST=$2
 DEVICE=$3
 echo "creating DATA on $HOST device $DEVICE"
-            ssh -t $2 \
-"sudo parted /dev/$DEVICE mklabel gpt; \
-sudo parted /dev/$DEVICE mkpart primary 2048s 100%; \
-sudo mkfs.xfs -f -isize=1024 /dev/${DEVICE}1;
-sudo blkid -s PARTUUID -o value /dev/${DEVICE}1 >> /tmp/blkid;
+ssh -t $2 \
+"sudo mkfs.xfs -f -isize=1024 /dev/${DEVICE};
 sudo mkdir -p /mnt/quobyte/device_${DEVICE}
-echo "/dev/${DEVICE}1 /mnt/quobyte/device_$DEVICE xfs relatime,nodiscard 0 0" | sudo tee --append /etc/fstab
+echo "/dev/${DEVICE} /mnt/quobyte/device_$DEVICE xfs relatime,nodiscard 0 0" | sudo tee --append /etc/fstab
 sudo mount -a
 "
 ;;
@@ -69,10 +66,7 @@ HOST=$2
 DEVICE=$3
 ssh -t $2 \
 "sudo umount /mnt/quobyte/device_$DEVICE; \
-sudo parted /dev/$DEVICE mklabel gpt; \
-sudo parted /dev/$DEVICE mkpart primary 2048s 100%; \
 sudo mkfs.xfs -f -isize=1024 /dev/${DEVICE}1;
-sudo blkid -s PARTUUID -o value /dev/${DEVICE}1 >> /tmp/blkid;
 sudo mount -a
 "
 ;;
