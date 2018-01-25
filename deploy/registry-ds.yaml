@@ -13,12 +13,14 @@ spec:
       containers:
         - name: quobyte-registry
           image: quay.io/quobyte/quobyte-server:2.0.pre4
+          # resources:
+          #   limits:
+          #     memory: "512Mi"
+          #     cpu: "100m"
+
+          # priviliged is required for full device inspector support
           securityContext:
-            capabilities:
-              add:
-                - SYS_RESOURCE
-          # securityContext:
-          #   privileged: true
+            privileged: true
           env:
             - name: QUOBYTE_SERVICE
               value: registry
@@ -59,10 +61,6 @@ spec:
               mountPropagation: Bidirectional
             - mountPath: /mnt/quobyte
               name: mnt-quobyte
-          resources:
-            limits:
-              memory: "512Mi"
-              cpu: "100m"
           readinessProbe:
             timeoutSeconds: 5
             httpGet:

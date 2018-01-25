@@ -17,12 +17,14 @@ spec:
       containers:
       - name: quobyte-metadata
         image: quay.io/quobyte/quobyte-server:2.0.pre4
+        # resources:
+        #   limits:
+            # memory: "1212Mi"
+            # cpu: "200m"
+
+        # priviliged is required for full device inspector support
         securityContext:
-          capabilities:
-            add:
-              - SYS_RESOURCE
-                # securityContext:
-                #   privileged: true
+          privileged: true
         env:
           - name: QUOBYTE_SERVICE
             value: metadata
@@ -57,10 +59,6 @@ spec:
           - mountPath: /var/lib/quobyte
             name: var-lib-quobyte
             mountPropagation: Bidirectional
-        resources:
-          limits:
-            memory: "1212Mi"
-            # cpu: "200m"
         ports:
           - name: rpc-tcp
             containerPort: 7872
