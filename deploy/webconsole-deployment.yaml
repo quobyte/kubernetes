@@ -13,6 +13,10 @@ spec:
       containers:
       - name: quobyte-webconsole
         image: quay.io/quobyte/quobyte-server:2.0.pre4
+        # resources:
+        #   limits:
+        #     memory: "300Mi"
+        #     cpu: "100m"
         env:
           - name: QUOBYTE_SERVICE
             value: "webconsole"
@@ -43,10 +47,6 @@ spec:
           - name: http
             containerPort: 8080
             protocol: TCP
-        resources:
-          limits:
-            memory: "300Mi"
-            cpu: "100m"
       - name: quobyte-api
         image: quay.io/quobyte/quobyte-server:2.0.pre4
         env:
