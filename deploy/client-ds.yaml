@@ -1,9 +1,12 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
   name: client
   namespace: quobyte
 spec:
+  selector:
+    matchLabels:
+      role: client
   template:
     metadata:
       annotations:
