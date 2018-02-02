@@ -1,0 +1,4 @@
+FROM scratch
+ADD operator /
+COPY ./pkg/artifacts /pkg/artifacts
+CMD ["/operator"]

@@ -1,0 +1,10 @@
+apiVersion: quobyte.com/v1
+kind: QuobyteClient
+metadata:
+  name: quobyte-client
+  namespace: quobyte
+spec:
+  nodes:
+      - qb3
+      - qb4
+  version: "1.4.9"
