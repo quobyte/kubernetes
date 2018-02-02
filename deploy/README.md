@@ -47,7 +47,7 @@ $ for dev in sdb sdc sdd; do \
 PARTUUID=<PARTUUID from blkid> /mnt/quobyte/data_$i xfs relatime,logbufs=8,logbsize=256k,swalloc,allocsize=131072k
 
 # for SSDs we recommend mount options:
-PARTUUID=<PARTUUID from blkid> /mnt/quobyte/data_$i relatime,nodiscard
+PARTUUID=<PARTUUID from blkid> /mnt/quobyte/data_$i xfs relatime,nodiscard
 ```
 
 When all fstab entries are created, mount the fresh disks with `mount -a`.
@@ -70,8 +70,8 @@ $ sudo ./qbootstrap /mnt/quobyte/data_1
 # and two data devices
 $ curl -O https://raw.githubusercontent.com/quobyte/kubernetes/master/tools/qmkdev
 $ chmod +x qmkdev
-$ sudo ./qmkdev -f -t -s $(uuidgen) DATA /mnt/quobyte/data_2
-$ sudo ./qmkdev -f -t -s $(uuidgen) DATA /mnt/quobyte/data_3
+$ sudo ./qmkdev -f -s $(uuidgen) -t DATA /mnt/quobyte/data_2
+$ sudo ./qmkdev -f -s $(uuidgen) -t DATA /mnt/quobyte/data_3
 ```
 
 On the other 3 machines:
