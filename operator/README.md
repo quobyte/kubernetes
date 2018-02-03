@@ -29,7 +29,7 @@ kubectl -n quobyte get po
 kubectl create -f examples/quobyte-client-example.yaml
 ```
 
-Building from source:
+Build from source:
 -----------------
 ## Requirements
 1. golang 1.8+
@@ -48,6 +48,7 @@ export GOPATH=$(pwd)
 cd src/operator
 CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o operator .
 ```
+If you're building for the first time after clone run ``glide install --strip-vendor`` to get the dependencies.
 
 3. To run operator outside cluster (skip to 4 to run operator inside cluster)
 ```
