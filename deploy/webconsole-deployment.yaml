@@ -13,6 +13,7 @@ spec:
       containers:
       - name: quobyte-webconsole
         image: quay.io/quobyte/quobyte-server:2.0.pre4
+        # imagePullPolicy: Always
         # resources:
         #   limits:
         #     memory: "300Mi"

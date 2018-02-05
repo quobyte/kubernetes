@@ -17,6 +17,7 @@ spec:
       containers:
       - name: quobyte-data
         image: quay.io/quobyte/quobyte-server:2.0.pre4
+        # imagePullPolicy: Always
         # resources:
         #   requests:
         #     memory: "512Mi"
@@ -48,12 +49,8 @@ spec:
             sed "s/.*MAX_MEM_DATA=.*/MAX_MEM_DATA=${MAX_MEM}/" -i /etc/default/quobyte
             exec /bin/bash -x /opt/main.sh
         volumeMounts:
-          - mountPath: /dev
-            name: dev
-          - mountPath: /sys/bus
-            name: sysbus
           - mountPath: /lib/modules
-            name: libmodules
+            name: lib-modules
           - mountPath: /mnt/quobyte
             name: mnt-quobyte
           - mountPath: /var/lib/quobyte
@@ -77,13 +74,7 @@ spec:
       nodeSelector:
         quobyte_data: "true"
       volumes:
-        - name: dev
-          hostPath:
-            path: /dev
-        - name: sysbus
-          hostPath:
-            path: /sys/bus
-        - name: libmodules
+        - name: lib-modules
           hostPath:
             path: /lib/modules
         - name: mnt-quobyte
