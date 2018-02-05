@@ -1,0 +1,72 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: quobyte-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: quobyte-operator
+subjects:
+- kind: ServiceAccount
+  name: quobyte-operator
+  namespace: quobyte
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: quobyte-operator
+rules:
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - "*"
+- apiGroups: ["apps"]
+  resources:
+  - daemonsets
+  verbs: ["list","get","delete", "create","patch"]
+- apiGroups:
+  - quobyte.com
+  resources:
+  - quobyteclients
+  verbs:                                                                                                                                                                                                                                     
+  - "*"                                                                                                                                                                                                                                      
+- apiGroups: [""]                                                                                                                                                                                                                            
+  resources:                                                                                                                                                                                                                                 
+  - pods                                                                                                                                                                                                                                     
+  verbs: ["list","get","delete", "create","watch"]                                                                                                                                                                                           
+- apiGroups: [""]                                                                                                                                                                                                                            
+  resources:                                                                                                                                                                                                                                 
+  - nodes                                                                                                                                                                                                                                    
+  verbs: ["get","patch"]                                                                                                                                                                                                                     
+- apiGroups: [""]                                                                                                                                                                                                                            
+  resources:                                                                                                                                                                                                                                 
+  - namespaces                                                                                                                                                                                                                               
+  verbs: ["get"]                                                                                                                                                                                                                             
+---                                                                                                                                                                                                                                          
+apiVersion: v1                                                                                                                                                                                                                               
+kind: ServiceAccount                                                                                                                                                                                                                         
+metadata:                                                                                                                                                                                                                                    
+  name: quobyte-operator                                                                                                                                                                                                                     
+  namespace: quobyte                                                                                                                                                                                                                         
+---                                                                                                                                                                                                                                          
+apiVersion: apps/v1beta1                                                                                                                                                                                                                     
+kind: Deployment                                                                                                                                                                                                                             
+metadata:                                                                                                                                                                                                                                    
+  name: quobyte-operator                                                                                                                                                                                                                     
+  namespace: quobyte                                                                                                                                                                                                                         
+spec:                                                                                                                                                                                                                                        
+  replicas: 1                                                                                                                                                                                                                                
+  template:                                                                                                                                                                                                                                  
+    metadata:                                                                                                                                                                                                                                
+      labels:                                                                                                                                                                                                                                
+        name: quobyte-operator                                                                                                                                                                                                               
+    spec:
+      serviceAccountName: quobyte-operator
+      containers:
+      - name: operator
+        image: quay.io/venkat_443/operator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7878
