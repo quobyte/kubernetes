@@ -37,6 +37,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+      nodeSelector:
+        quobyte_client: "true"
       volumes:
       - name: quobytevolume
         quobyte:
