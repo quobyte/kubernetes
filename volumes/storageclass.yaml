@@ -1,0 +1,15 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: base
+provisioner: kubernetes.io/quobyte
+parameters:
+    quobyteAPIServer: "http://api.quobyte7860"
+    registry: "registry.quobyte:7861"
+    adminSecretName: "quobyte-admin-secret"
+    adminSecretNamespace: "kube-system"
+    user: "root"
+    group: "root"
+    quobyteConfig: "BASE"
+    quobyteTenant: "DEFAULT"
+    createQuota: "False"
