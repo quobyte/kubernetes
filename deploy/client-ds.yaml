@@ -15,11 +15,11 @@ spec:
         prometheus.io/port: '55000'
       labels:
         role: client
-        version: "2.0.pre4"
+        version: "2.0.pre"
     spec:
       containers:
       - name: quobyte-client
-        image: quay.io/quobyte/quobyte-client:2.0.pre4
+        image: quay.io/quobyte/quobyte-client:2.0.pre
         imagePullPolicy: Always
         # NOTE(kaisers): The weird if check before mkdir -p is required to not hang on a stale mount
         command:

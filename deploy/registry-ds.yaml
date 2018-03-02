@@ -8,11 +8,11 @@ spec:
     metadata:
       labels:
         role: registry
-        version: "2.0.pre4"
+        version: "2.0.pre"
     spec:
       containers:
       - name: quobyte-registry
-        image: quay.io/quobyte/quobyte-server:2.0.pre4
+        image: quay.io/quobyte/quobyte-server:2.0.pre
         # imagePullPolicy: Always
         # resources:
         #   limits:

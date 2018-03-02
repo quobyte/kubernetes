@@ -8,11 +8,11 @@ spec:
     metadata:
       labels:
         role: webconsole
-        version: "2.0.pre4"
+        version: "2.0.pre"
     spec:
       containers:
       - name: quobyte-webconsole
-        image: quay.io/quobyte/quobyte-server:2.0.pre4
+        image: quay.io/quobyte/quobyte-server:2.0.pre
         # imagePullPolicy: Always
         # resources:
         #   limits:
@@ -49,7 +49,7 @@ spec:
             containerPort: 8080
             protocol: TCP
       - name: quobyte-api
-        image: quay.io/quobyte/quobyte-server:2.0.pre4
+        image: quay.io/quobyte/quobyte-server:2.0.pre
         env:
           - name: QUOBYTE_SERVICE
             value: api
