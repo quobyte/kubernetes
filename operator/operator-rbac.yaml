@@ -22,7 +22,7 @@ rules:
   - customresourcedefinitions
   verbs:
   - "*"
-- apiGroups: ["apps"]
+- apiGroups: ["extensions"]
   resources:
   - daemonsets
   verbs: ["list","get","delete", "create","patch"]
@@ -66,7 +66,7 @@ spec:
       serviceAccountName: quobyte-operator
       containers:
       - name: operator
-        image: quay.io/venkat_443/operator:latest
+        image: quay.io/venkat_443/operator:1
         imagePullPolicy: Always
         ports:
         - containerPort: 7878

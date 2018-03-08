@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"k8s.io/api/apps/v1beta2"
 	v1 "k8s.io/api/core/v1"
+	extentionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -18,35 +18,7 @@ const (
 	podCreateMaxRetries int = 5
 )
 
-//CreateClientDaemonSet creates client daemonset for the given json definition.
-// func CreateClientDaemonSet(version string) error {
-// 	def, err := ioutil.ReadFile("vendor/github.com/quobyte/kubernetes/deploy/client-ds.yaml")
-// 	if err != nil {
-// 		glog.Error("Failed to get definition of client")
-// 		return err
-// 	}
-// 	dep := &v1beta2.DaemonSet{}
-// 	yaml.Unmarshal(def, dep)
-
-// 	if version != "" {
-// 		updateVersionLabel(dep, version)
-// 		image := dep.Spec.Template.Spec.Containers[0].Image
-// 		dep.Spec.Template.Spec.Containers[0].Image = image[0:strings.LastIndex(image, ":")+1] + version
-// 	}
-
-// 	_, err = KubernetesClient.AppsV1beta2().DaemonSets(quobyteNameSpace).Create(dep)
-// 	if err != nil {
-// 		if apierrors.IsAlreadyExists(err) { // TODO: check if it is at same version & nodes as the previous deployment. Scenario: operator crash & restart will miss some updates on CR.
-// 			glog.V(1).Infof("Daemonset %s already exists", dep.Name)
-// 			return nil
-// 		}
-// 		return err
-// 	}
-// 	glog.Info("Deployed client daemonset")
-// 	return nil
-// }
-
-func updateVersionLabel(dep *v1beta2.DaemonSet, version string) {
+func updateVersionLabel(dep *extentionsv1beta1.DaemonSet, version string) {
 	labels := dep.Spec.Template.ObjectMeta.GetLabels()
 	labels["version"] = version
 	dep.Spec.Template.ObjectMeta.SetLabels(labels)
@@ -54,7 +26,7 @@ func updateVersionLabel(dep *v1beta2.DaemonSet, version string) {
 
 //DeleteQuobyteDeployment deletes Quobyte daemonset with the given name.
 func DeleteQuobyteDeployment(name string) error {
-	err = KubernetesClient.AppsV1beta2().DaemonSets(quobyteNameSpace).Delete(name, &metav1.DeleteOptions{})
+	err = KubernetesClient.ExtensionsV1beta1().DaemonSets(quobyteNameSpace).Delete(name, &metav1.DeleteOptions{})
 
 	if err != nil {
 		return err
@@ -63,8 +35,8 @@ func DeleteQuobyteDeployment(name string) error {
 	return nil
 }
 
-func GetDaemonsetByName(name string) (*v1beta2.DaemonSet, error) {
-	return KubernetesClient.AppsV1beta2().DaemonSets(quobyteNameSpace).Get(name, metav1.GetOptions{})
+func GetDaemonsetByName(name string) (*extentionsv1beta1.DaemonSet, error) {
+	return KubernetesClient.ExtensionsV1beta1().DaemonSets(quobyteNameSpace).Get(name, metav1.GetOptions{})
 }
 
 // GetClientPodsByVersion returns client pods with specified version.
@@ -174,10 +146,10 @@ func UpdateDaemonSet(daemonsetname string, version string) error {
 	ds.Spec.Template.Spec.Containers[0].Image = image[0:strings.LastIndex(image, ":")+1] + version
 
 	newJSON, err := json.Marshal(ds)
-	patchbytes, err := strategicpatch.CreateTwoWayMergePatch(oldData, newJSON, v1beta2.DaemonSet{})
+	patchbytes, err := strategicpatch.CreateTwoWayMergePatch(oldData, newJSON, extentionsv1beta1.DaemonSet{})
 
 	if len(patchbytes) > 2 {
-		updatedDS, err := KubernetesClient.AppsV1beta2().DaemonSets(quobyteNameSpace).Patch(ds.Name, types.StrategicMergePatchType, patchbytes)
+		updatedDS, err := KubernetesClient.ExtensionsV1beta1().DaemonSets(quobyteNameSpace).Patch(ds.Name, types.StrategicMergePatchType, patchbytes)
 		if err != nil {
 			glog.Errorf("update of client daemonset failed: %s", err)
 			return err

@@ -60,20 +60,17 @@ func newQuobyteClientController(quobyteclient *quobytev1.Clientset) (*controller
 func handleClientCRAdd(obj interface{}) {
 	deployedClientDS, err := resourcehandler.GetDaemonsetByName("client")
 	if err != nil {
-		glog.Error("Failed to get client daemonset")
+		glog.Errorf("Failed to get client daemonset %v", err)
 	}
 	deployedClientLabels := deployedClientDS.GetLabels()
-	version := obj.(*v1.QuobyteClient).Spec.Version
-	for _, label := range deployedClientLabels {
-		if label == "version" {
-			version = deployedClientLabels[label]
-			break
-		}
-	}
-	if obj.(*v1.QuobyteClient).Spec.Version != version {
-		err := resourcehandler.UpdateDaemonSet("client", obj.(*v1.QuobyteClient).Spec.Version) // TODO: get dynamic name
-		if err != nil {
-			glog.Errorf("Failed to update client daemonset with updated version %s\n", obj.(*v1.QuobyteClient).Spec.Version)
+	version, ok := deployedClientLabels["version"]
+	if ok {
+		if obj.(*v1.QuobyteClient).Spec.Version != version {
+			glog.Info("version change in CR, updating client daemonset to %v", version)
+			err := resourcehandler.UpdateDaemonSet("client", obj.(*v1.QuobyteClient).Spec.Version) // TODO: get dynamic name
+			if err != nil {
+				glog.Errorf("Failed to update client daemonset with updated version %s\n", obj.(*v1.QuobyteClient).Spec.Version)
+			}
 		}
 	}
 	resourcehandler.LabelNodes(obj.(*v1.QuobyteClient).Spec.Nodes, "add", "quobyte_client")
