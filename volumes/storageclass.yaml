@@ -4,12 +4,12 @@ metadata:
    name: base
 provisioner: kubernetes.io/quobyte
 parameters:
-    quobyteAPIServer: "http://api.quobyte7860"
+    quobyteAPIServer: "http://api.quobyte:7860"
     registry: "registry.quobyte:7861"
     adminSecretName: "quobyte-admin-secret"
     adminSecretNamespace: "kube-system"
     user: "root"
     group: "root"
     quobyteConfig: "BASE"
-    quobyteTenant: "DEFAULT"
+    quobyteTenant: "My Tenant"
     createQuota: "False"
