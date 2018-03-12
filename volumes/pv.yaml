@@ -1,0 +1,18 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: test
+  labels:
+    type: quobyte
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: "base"
+  quobyte:
+    registry: ignored:7861
+    volume: test
+    readOnly: false
+    user: root
+    group: root

@@ -12,15 +12,20 @@ spec:
         prometheus.io/port: '7873'
       labels:
         role: data
-        version: "1.4"
+        version: "2.0.pre"
     spec:
       containers:
-      - name: quobyte-metadata
-        image: quay.io/quobyte/quobyte-server:1.4
+      - name: quobyte-data
+        image: quay.io/quobyte/quobyte-server:2.0.pre
+        # imagePullPolicy: Always
+        # resources:
+        #   requests:
+        #     memory: "512Mi"
+        #     cpu: "200m"
+
+        # priviliged is required for full device inspector support
         securityContext:
-          capabilities:
-            add:
-              - SYS_RESOURCE
+          privileged: true
         env:
           - name: QUOBYTE_SERVICE
             value: data
@@ -44,18 +49,13 @@ spec:
             sed "s/.*MAX_MEM_DATA=.*/MAX_MEM_DATA=${MAX_MEM}/" -i /etc/default/quobyte
             exec /bin/bash -x /opt/main.sh
         volumeMounts:
-          - mountPath: /dev
-            name: dev
-          - mountPath: /sys/bus
-            name: sysbus
           - mountPath: /lib/modules
-            name: libmodules
+            name: lib-modules
           - mountPath: /mnt/quobyte
             name: mnt-quobyte
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "200m"
+          - mountPath: /var/lib/quobyte
+            name: var-lib-quobyte
+            mountPropagation: Bidirectional
         ports:
           - name: rpc-tcp
             containerPort: 7873
@@ -71,20 +71,15 @@ spec:
           httpGet:
             port: 7873
             path: /
-        securityContext:
-          privileged: true
       nodeSelector:
         quobyte_data: "true"
       volumes:
-        - name: dev
-          hostPath:
-            path: /dev
-        - name: sysbus
-          hostPath:
-            path: /sys/bus
-        - name: libmodules
+        - name: lib-modules
           hostPath:
             path: /lib/modules
         - name: mnt-quobyte
           hostPath:
             path: /mnt/quobyte
+        - name: var-lib-quobyte
+          hostPath:
+            path: /var/lib/quobyte

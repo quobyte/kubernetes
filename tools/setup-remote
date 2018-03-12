@@ -1,0 +1,86 @@
+#!/bin/bash
+#set -x
+
+case "$1" in
+list)
+ssh $2 lsblk
+;;
+
+download)
+HOST=$2
+  ssh $HOST "curl https://raw.githubusercontent.com/quobyte/kubernetes/master/tools/qmkdev -o /tmp/qmkdev; \
+    chmod +x /tmp/qmkdev"
+  ;;
+
+makedata)
+HOST=$2
+DEVICE=$3
+ssh $HOST "sudo /tmp/qmkdev -f -s $(uuidgen) -t DATA /mnt/quobyte/device_${DEVICE}"
+;;
+
+makemetadata)
+HOST=$2
+DEVICE=$3
+ssh $HOST "sudo /tmp/qmkdev -f -s $(uuidgen) -t METADATA /mnt/quobyte/device_${DEVICE}"
+;;
+
+makeregistry)
+HOST=$2
+DEVICE=$3
+ssh $HOST "sudo /tmp/qmkdev -f -s $(uuidgen) -t REGISTRY /mnt/quobyte/device_${DEVICE}"
+;;
+
+bootstrap-device)
+HOST=$2
+DEVICE=$3
+  ssh $HOST "curl https://raw.githubusercontent.com/quobyte/kubernetes/master/tools/qbootstrap -o /tmp/qbootstrap; \
+    chmod +x /tmp/qbootstrap"
+ssh $HOST "yes y | sudo /tmp/qbootstrap /mnt/quobyte/device_${DEVICE}"
+;;
+
+bootstrap-dir)
+HOST=$2
+DEVICEFILE=/var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP
+ssh $HOST "mkdir -p /var/lib/quobyte/devices/registry-bootstrap"
+echo "# Quobyte device identifier file" | ssh $HOST "sudo cat > ${DEVICEFILE}"
+echo "# Hostname: ${HOST}" | ssh $HOST "sudo cat >> ${DEVICEFILE}"
+echo "device.serial=$(uuidgen)" | ssh $HOST "sudo cat >> ${DEVICEFILE}"
+echo "device.model=unknown" | ssh $HOST "sudo cat >> ${DEVICEFILE}"
+echo "device.type=DIR_DEVICE" | ssh $HOST "sudo cat >> ${DEVICEFILE}"
+;;
+
+format)
+HOST=$2
+DEVICE=$3
+echo "creating DATA on $HOST device $DEVICE"
+ssh -t $2 \
+"sudo mkfs.xfs -f -isize=1024 /dev/${DEVICE};
+sudo mkdir -p /mnt/quobyte/device_${DEVICE}
+echo "/dev/${DEVICE} /mnt/quobyte/device_$DEVICE xfs relatime,nodiscard 0 0" | sudo tee --append /etc/fstab
+sudo mount -a
+"
+;;
+
+reformat)
+HOST=$2
+DEVICE=$3
+ssh -t $2 \
+"sudo umount /mnt/quobyte/device_$DEVICE; \
+sudo mkfs.xfs -f -isize=1024 /dev/${DEVICE}1;
+sudo mount -a
+"
+;;
+
+*)
+echo "NOTE: This tool is a quick hack and not a recommended or supported way for setup."
+echo $"Usage: $0 "
+echo $"$0 download <host> | Downloads qmked to the host"
+echo $"$0 format <host> <sdX> | formats the device "
+echo $"$0 reformat <host> <sdX> | unmounts and reformats"
+echo $"$0 bootstrap-device <host> <sdX> | call qmkev on the device"
+echo $"$0 bootstrap-dir <host> | create a dir based bootstrap"
+echo $"$0 makedata <host> <sdX> | marks the formatted and mounted device as DATA"
+echo $"$0 makemetadata <host> <sdX> | marks the formatted and mounted device as METADATA"
+echo $"$0 makeregistry <host> <sdX> | marks the formatted and mounted device as REGISTRY"
+exit 2
+esac

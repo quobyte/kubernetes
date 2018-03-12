@@ -22,7 +22,7 @@ spec:
   volumes:
   - name: quobytevolume
     quobyte:
-      registry: LBIP:7861
+      registry: ignored:7861
       volume: testVolume
       readOnly: false
       user: root

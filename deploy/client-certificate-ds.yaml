@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1beta2
 kind: DaemonSet
 metadata:
   name: client
@@ -49,12 +49,20 @@ spec:
               ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
             fi
             echo "QUOBYTE_REGISTRY: ${ADDR}"
-
+            mkdir -p /root/.quobyte
+            cp /quobytecert/client.cfg /root/.quobyte/client.cfg
             /bin/nsenter -t 1 --wd=. -m -- \
               lib/ld-linux-x86-64.so.2 \
               --library-path ./lib \
-            ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename \
-              --http-port 55000 -f -l /dev/stdout -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} \
+            ./bin/mount.quobyte \
+              -c ./root/.quobyte/client.cfg \
+              --hostname ${NODENAME} \
+              --allow-usermapping-in-volumename \
+              --http-port 55000 \
+              -f \
+              -l /dev/stdout \
+              -d ${QUOBYTE_CLIENT_LOG_LEVEL} \
+              ${OPTS} \
               ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
         securityContext:
           privileged: true
@@ -91,6 +99,8 @@ spec:
             mountPath: /var/lib/kubelet/plugins/kubernetes.io~quobyte
           - name: etcfs
             mountPath: /etcfs
+          - name: configs
+            mountPath: /quobytecert
         lifecycle:
           preStop:
             exec:
@@ -105,3 +115,10 @@ spec:
       - name: etcfs
         hostPath:
           path: /etc
+      - name: configs
+        secret:
+          defaultMode: 420
+          items:
+          - key: client.cfg
+            path: client.cfg
+          secretName: client-config

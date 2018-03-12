@@ -1,0 +1,49 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: fio-benchmark
+  labels:
+    app: fio-benchmark
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fio-benchmark
+  template:
+    metadata:
+      labels:
+        app: fio-benchmark
+    spec:
+      containers:
+      - name: fio
+        image: datawiseio/fio:latest
+        volumeMounts:
+          - name: quobytevolume
+            mountPath: /data
+        command: ["/usr/bin/fio"]
+        args: ["--name=k8sfio",
+               "--rw=write",
+               "--numjobs=1",
+               "--iodepth=1",
+               "--filesize=1G",
+               "--runtime=120s",
+               "--time_based",
+               "--filename_format=$(NODE_NAME)-$jobnum",
+               "--directory=/data/",
+               "--output-format=json",
+               "--output=/data/$(NODE_NAME).out"]
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+      nodeSelector:
+        quobyte_client: "true"
+      volumes:
+      - name: quobytevolume
+        quobyte:
+          registry: LBIP:7861
+          volume: fio-test
+          readOnly: false
+          user: root
+          group: root

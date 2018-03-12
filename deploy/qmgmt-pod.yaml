@@ -3,13 +3,13 @@ kind: Pod
 metadata:
   labels:
     role: qmgmt-pod
-    version: "1.4"
+    version: "2.0.pre"
   name: qmgmt-pod
   namespace: quobyte
 spec:
   containers:
     - name: qmgmt-pod
-      image: quay.io/quobyte/quobyte-server:1.4
+      image: quay.io/quobyte/quobyte-server:2.0.pre
       command:
         - /bin/bash
         - -xec
