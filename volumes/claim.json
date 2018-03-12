@@ -10,7 +10,7 @@
     ],
     "resources": {
       "requests": {
-        "storage": "3Gi"
+        "storage": "1Gi"
       }
     },
     "storageClassName": "base"
