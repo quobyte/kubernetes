@@ -1,6 +1,6 @@
 # Quobyte operator
-Deploys quobyte clients on to the nodes configured in Custom Resuource QuobyteClient.  
-`Note:` Operator requires Custom Resource Definitions (CRD), which is only available from kubernetes 1.8
+Deploys Quobyte clients on to the nodes configured in Custom Resuource QuobyteClient.  
+`Note:` Operator requires [Custom Resource Definitions (CRD)](https://kubernetes.io/docs/concepts/api-extension/custom-resources/), which are available only from kubernetes 1.8
 
 * [Deploy clients](#deploy-clients)
 * [Build from source](#build-from-source)
