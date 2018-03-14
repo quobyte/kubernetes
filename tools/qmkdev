@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017 Quobyte Inc.
+# Copyright 2017-2018 Quobyte Inc.
 
 LANG=en_US.utf-8
 DEVICE_ID_FILE="QUOBYTE_DEV_SETUP"

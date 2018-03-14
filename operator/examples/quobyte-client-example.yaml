@@ -5,6 +5,6 @@ metadata:
   namespace: quobyte
 spec:
   nodes:
-      - qb3
-      - qb4
-  version: "1.4.9"
+      - node01
+      - node02
+  version: "2.0.pre"
