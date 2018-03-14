@@ -17,6 +17,7 @@ spec:
         role: client
         version: "2.0.pre"
     spec:
+      #serviceAccountName: quobyteclientsrv
       containers:
       - name: quobyte-client
         image: quay.io/quobyte/quobyte-client:2.0.pre

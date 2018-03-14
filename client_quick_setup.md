@@ -40,6 +40,8 @@ env:
   - name: QUOBYTE_REGISTRY
     value: registry.quobyte
 ```
+If you have a QNS (Quobyte Name Service), the value for QUOBYTE_REGISTRY might
+look like `<qnsid>.myquobyte.net`
 
 If you have a certificate for the client, it is stored as a Secret and
 mounted into the client Pod as client.cfg.
@@ -47,7 +49,7 @@ mounted into the client Pod as client.cfg.
 First create a file that contains only the certificate information
 (<ca>, <cert>, and <key> blocks) and store it as a secret.
 ```bash
-kubectl -n quobyte create secret generic client-config --from-file /tmp/client.cfg
+$ kubectl -n quobyte create secret generic client-config --from-file /tmp/client.cfg
 ```
 
 ```bash
@@ -78,7 +80,7 @@ This will start a single Pod on a node which is marked as quobyte_client.
 The container is designed to put load on the volume, so you can scale it:
 
 ```bash
-kubectl scale --replicas=100 deployment fio-benchmark
+$ kubectl scale --replicas=100 deployment fio-benchmark
 ```
 
 ## Volume Access
@@ -116,13 +118,13 @@ the accessing pod is running. The claim (volumes/claim.json)
         "storage": "3Gi"
       }
     },
-    "storageClassName": "slow"
+    "storageClassName": "base"
   }
 }
 ```
 
 ```bash
-kubectl create -f volumes/claim.json
+$ kubectl -n quobyte create -f volumes/claim.json
 ```
 
 is mounted in the Pod like (see volumes/example-pod.yaml):
@@ -134,10 +136,14 @@ volumes:
       claimName: test
 ```
 
-The PersistentVolumeClaim is bound to a PersistentVolume which is created by an administrator for existing Quobyte Volumes or dynamically by the StorageClass (volumes/storageclass.yaml).
+The PersistentVolumeClaim is bound to a PersistentVolume which is created by an
+administrator for existing Quobyte Volumes or dynamically by the StorageClass
+(volumes/storageclass.yaml).
 
 If a Quobyte Volume already exists, the administrator can make it available
-as a PersistentVolume by creating a resource (volumes/pv.yaml). Please note that Quobyte currently ignores the required capacity.storage field, since its using internal quota mechanisms.
+as a PersistentVolume by creating a resource (volumes/pv.yaml).
+Please note that Quobyte currently ignores the required capacity.storage field,
+since its using internal quota mechanisms.
 
 ```yaml
 kind: PersistentVolume
@@ -151,7 +157,7 @@ spec:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
-  storageClassName: "slow"
+  storageClassName: "base"
   quobyte:
     registry: LBIP:7861
     volume: test
@@ -161,7 +167,7 @@ spec:
 ```
 
 ```bash
-kubectl create -f volumes/pv.yaml
+$ kubectl -n quobyte create -f volumes/pv.yaml
 ```
 
 For dynamic provisioning, a StorageClass is created, which manages the
@@ -171,7 +177,7 @@ lifecycle of Quobyte volumes.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-   name: slow
+   name: base
 provisioner: kubernetes.io/quobyte
 parameters:
     quobyteAPIServer: "http://api.quobyte:7860"
@@ -185,16 +191,32 @@ parameters:
     createQuota: "False"
 ```
 
-To enable it, first create the quobyte admin secret according to your API
-credentials (defaults to admin:quobyte).
+To enable it, first create the Quobyte admin secret according to your API
+credentials in volumes/quobyte-admin-secret.yaml (defaults to admin:quobyte):
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quobyte-admin-secret
+type: "kubernetes.io/quobyte"
+data:
+  password: cXVvYnl0ZQ==
+  user: YWRtaW4=
+type: kubernetes.io/quobyte
+```
+
+The password and user strings are base64 encoded and can be created like
+`echo "quobyte" | base64`.
+
 ```bash
-kubectl --namespace=kube-system create -f volumes/quobyte-admin-secret.yaml
-kubectl create -f volumes/storageclass.yaml
+$ kubectl -n kube-system create -f volumes/quobyte-admin-secret.yaml
+$ kubectl -n quobyte create -f volumes/storageclass.yaml
 ```
 
 ## Quobyte Tenants and Kubernetes Namespaces
 
-Quobyte supports multiple tenants and provides a secure mapping of containers to Users known in Quobyte.
+Quobyte supports multiple tenants and provides a secure mapping of containers to
+ users known in Quobyte.
 For a longer read, please see the article on the Quobyte blog:
 [The State of Secure Storage Access in Container Infrastructures](https://www.quobyte.com/blog/2017/03/17/the-state-of-secure-storage-access-in-container-infrastructures/)
 
