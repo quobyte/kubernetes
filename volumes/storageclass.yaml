@@ -13,3 +13,4 @@ parameters:
     quobyteConfig: "BASE"
     quobyteTenant: "My Tenant"
     createQuota: "False"
+reclaimPolicy: Retain
