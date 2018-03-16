@@ -18,24 +18,25 @@ first, start registries, data, and metadata services on the target pods
 and let the device inspector create the devices.
 Afterwards, it is safe to delete the bootstrap registry again.
 
-First, create the quobyte namespace, and set up a config and services.
+Quobyte setup requires bootstrap node. Update `registry.bootstrap_node` in `deploy/config.yaml` with bootstrap node.
+
+Label your bootstrap node as registry.
+```bash
+kubectl label node <bootstrap-node> quobyte_registry="true"
+```
+
+Create the quobyte namespace, set up config and services.
 
 ```bash
 kubectl create -f quobyte-ns.yaml
 kubectl -n quobyte create -f config.yaml
 kubectl -n quobyte create -f quobyte-services.yaml
 
-kubectl -n quobyte create -f registry-bootstrap-ds.yaml
 kubectl -n quobyte create -f registry-ds.yaml
 kubectl -n quobyte create -f data-ds.yaml
 kubectl -n quobyte create -f metadata-ds.yaml
 ```
 
-Choose any node to be the initial bootstrap registry.
-
-```bash
-kubectl label nodes qb1 quobyte_bootstrap="true"
-```
 As soon as the registry is up, start the webconsole, api, and qmgmt pods:
 
 ```bash
@@ -53,10 +54,10 @@ The services will show up in the webconsole and the Device Inspector will help
 to set up the devices.
 
 ```bash
-kubectl label nodes <node> quobyte_metadata="true"
+kubectl label nodes <node> quobyte_data="true"
 kubectl label nodes <node> quobyte_registry="true"
 kubectl label nodes <node> quobyte_metadata="true"
 ```
 
 Once you have three other registries set up on physical devices, it's safe
-to remove the `quobyte_bootstrap` label and delete the registry pod.
+to remove the `quobyte_registry` label, delete the registry pod on the bootstrap node and update `registry.bootstrap_node` in `deploy/config.yaml` with empty string`""`.

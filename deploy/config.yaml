@@ -4,6 +4,7 @@ metadata:
   name: quobyte-config
   namespace: quobyte
 data:
+  registry.bootstrap_node: "qb1"
   registry.min_mem: 64m
   registry.max_mem: 512m
   metadata.min_mem: 256m
