@@ -42,6 +42,11 @@ spec:
                 mkdir -p ${QUOBYTE_MOUNT_POINT}
               fi
             fi
+
+            # set the mount point immutable. As long as mount.quobyte does not run,
+            # other processes cannot write data to this dir.
+            chattr +i ${QUOBYTE_MOUNT_POINT}
+
             if echo ${QUOBYTE_REGISTRY} | grep -q ","; then
               # registries are outside the k8s cluster, pass through and DNS lookup later
               ADDR=${QUOBYTE_REGISTRY}
