@@ -95,8 +95,8 @@ volumes:
     registry: LBIP:7861
     volume: testVolume
     readOnly: false
-    user: root
-    group: root
+    user: username
+    group: groupname
 ```
 
 or as a PersistentVolumeClaim, which is defined in the same namespace, where
@@ -162,8 +162,8 @@ spec:
     registry: LBIP:7861
     volume: test
     readOnly: false
-    user: root
-    group: root
+    user: username
+    group: groupname
 ```
 
 ```bash
@@ -184,8 +184,8 @@ parameters:
     registry: "registry.quobyte:7861"
     adminSecretName: "quobyte-admin-secret"
     adminSecretNamespace: "kube-system"
-    user: "root"
-    group: "root"
+    user: "username"
+    group: "groupname"
     quobyteConfig: "BASE"
     quobyteTenant: "DEFAULT"
     createQuota: "False"
