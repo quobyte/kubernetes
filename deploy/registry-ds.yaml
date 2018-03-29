@@ -40,6 +40,52 @@ spec:
               configMapKeyRef:
                 name: quobyte-config
                 key: registry.min_mem
+          - name: CURRENT_NODE
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: QUOBYTE_BOOTSTRAP_NODE
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: registry.bootstrap_node
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            if [ "${QUOBYTE_BOOTSTRAP_NODE}" = "${CURRENT_NODE}" ]; then
+            sed "s/.*MIN_MEM_REGISTRY=.*/MIN_MEM_REGISTRY=${MIN_MEM}/" -i /etc/default/quobyte
+            sed "s/.*MAX_MEM_REGISTRY=.*/MAX_MEM_REGISTRY=${MAX_MEM}/" -i /etc/default/quobyte
+            mkdir -p /var/lib/quobyte/devices/registry-bootstrap
+            if [ ! -f /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP ]; then
+              mkdir -p /devices/dev1
+              cat > /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP <<EOF
+            device.serial=$(uuidgen)
+            device.model=Kubernetes-hostDir
+            device.type=DIR_DEVICE
+            EOF
+              if [ $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | wc -l) == 0 ]; then
+                echo "device.bootstrap=true" >> /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP
+              fi
+            fi
+
+            if [ ! -f /var/lib/quobyte/devices/registry-bootstrap/UUID ]; then
+              echo uuid=$(uuidgen) >> /var/lib/quobyte/devices/registry-bootstrap/UUID
+            fi
+            cat /var/lib/quobyte/devices/registry-bootstrap/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+            fi
+            exec /bin/bash -x /opt/main.sh
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /bin/bash
+                - -xe
+                - |
+                  if [ "${QUOBYTE_BOOTSTRAP_NODE}" = "${CURRENT_NODE}" ]; then
+                  qmgmt -u api registry remove $(grep device.id= /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_ID | cut -d= -f2)
+                  rm -rf /var/lib/quobyte/devices/registry-bootstrap/
+                  fi
         ports:
           - name: rpc-tcp
             containerPort: 7861
