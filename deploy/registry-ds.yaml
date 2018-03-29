@@ -73,16 +73,6 @@ spec:
               echo uuid=$(uuidgen) >> /var/lib/quobyte/devices/registry-bootstrap/UUID
             fi
             cat /var/lib/quobyte/devices/registry-bootstrap/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
-            else
-            mkdir -p /var/lib/quobyte/devices/registry-bootstrap
-            if [ ! -f /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP ]; then
-              mkdir -p /devices/dev1
-              cat > /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP <<EOF
-            device.serial=$(uuidgen)
-            device.model=Kubernetes-hostDir
-            device.type=DIR_DEVICE
-            EOF
-            fi
             fi
             exec /bin/bash -x /opt/main.sh
         lifecycle:
@@ -92,8 +82,10 @@ spec:
                 - /bin/bash
                 - -xe
                 - |
+                  if [ "${QUOBYTE_BOOTSTRAP_NODE}" = "${CURRENT_NODE}" ]; then
                   qmgmt -u api registry remove $(grep device.id= /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_ID | cut -d= -f2)
                   rm -rf /var/lib/quobyte/devices/registry-bootstrap/
+                  fi
         ports:
           - name: rpc-tcp
             containerPort: 7861
