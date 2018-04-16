@@ -12,11 +12,11 @@ spec:
         prometheus.io/port: '7873'
       labels:
         role: data
-        version: "2.0.pre"
+        version: "2"
     spec:
       containers:
       - name: quobyte-data
-        image: quay.io/quobyte/quobyte-server:2.0.pre
+        image: quay.io/quobyte/quobyte-server:2
         # imagePullPolicy: Always
         # resources:
         #   requests:
