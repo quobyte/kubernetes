@@ -137,4 +137,3 @@ sudo docker commit <CONTAINER ID>  <Docker-repository-url>
 sudo docker push <Docker-repository-url>
 ```
 8. Edit ``operator.yaml`` and point ``quobyte-operator`` container image to the docker image.
-9.
