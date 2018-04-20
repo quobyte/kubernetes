@@ -11,7 +11,7 @@ Currently contains:
 Please see the quick start guides for instructions:
 
  * Manual deployment of Quobyte [clients](client_quick_setup.md) and [services](server_quick_setup.md).
- * Operator based setup for Quobyte [clients and services](operator.md)
+ * Operator based setup for Quobyte [clients and services](operator/README.md)
 
 These blog posts will give you some more insights and ideas how to benefit from these integrations:
 
