@@ -7,7 +7,7 @@ spec:
     image: quay.io/quobyte/quobyte-client:2
     rolling_updates_enabled: true
     nodes:
-      - node01
-      - node02
-      - node03
-      - node04
+      - qb1
+      - qb2
+      - qb3
+      - qb4

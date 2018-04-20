@@ -5,7 +5,7 @@ metadata:
   namespace: quobyte
 data:
   # The specified node will become the initial ephemeral bootstrap node
-  registry.bootstrap_node: "nodeXX"
+  registry.bootstrap_node: "qb4"
 
   # Adjust these settings according to your workloads and recommendations from Quobyte documentation
   registry.min_mem: 64m
