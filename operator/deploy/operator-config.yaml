@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: quobyte-config
+  namespace: quobyte
+data:
+  # The specified node will become the initial ephemeral bootstrap node
+  registry.bootstrap_node: "nodeXX"
+
+  # Adjust these settings according to your workloads and recommendations from Quobyte documentation
+  registry.min_mem: 64m
+  registry.max_mem: 512m
+
+  metadata.min_mem: 256m
+  metadata.max_mem: 1024m
+
+  data.min_mem: 256m
+  data.max_mem: 1024m
+
+  api.min_mem: 64m
+  api.max_mem: 300m
+
+  webconsole.min_mem: 64m
+  webconsole.max_mem: 512m

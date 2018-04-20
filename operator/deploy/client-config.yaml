@@ -1,0 +1,13 @@
+apiVersion: quobyte.com/v1
+kind: QuobyteClient
+metadata:
+  name: quobyte-client
+  namespace: quobyte
+spec:
+    image: quay.io/quobyte/quobyte-client:2
+    rolling_updates_enabled: true
+    nodes:
+      - node01
+      - node02
+      - node03
+      - node04

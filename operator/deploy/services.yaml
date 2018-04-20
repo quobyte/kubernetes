@@ -1,0 +1,464 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: quobyte
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/prometheus'
+    prometheus.io/port: '7871'
+spec:
+  clusterIP: "None" # headless service => kube-dns will return pod IPs
+  ports:
+    - name: quobyte # available as _quobyte._tcp.registry via DNS
+      port: 7861
+      protocol: TCP
+    - name: rpc-udp
+      port: 7861
+      protocol: UDP
+    - name: http
+      port: 7871
+      protocol: TCP
+  selector:
+    role: registry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: quobyte
+spec:
+  ports:
+    - name: api80
+      targetPort: 7860
+      port: 80
+      protocol: TCP
+    - name: api
+      port: 7860
+      protocol: TCP
+  selector:
+    role: webconsole
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webconsole
+  namespace: quobyte
+spec:
+  ports:
+    - name: web80
+      targetPort: 8080
+      port: 80
+      protocol: TCP
+    - name: web
+      port: 8080
+      protocol: TCP
+  selector:
+    role: webconsole
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: registry
+  namespace: quobyte
+spec:
+  selector:
+    matchLabels:
+        role: registry
+  template:
+    metadata:
+      labels:
+        role: registry
+    spec:
+      containers:
+      - name: quobyte-registry
+        image: quay.io/quobyte/quobyte-server:2
+        # imagePullPolicy: Always
+        # resources:
+        #   limits:
+        #     memory: "512Mi"
+        #     cpu: "100m"
+
+        # priviliged is required for full device inspector support
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: registry
+          - name: QUOBYTE_REGISTRY
+            value: registry
+          - name: QUOBYTE_EXTRA_SERVICE_CONFIG
+            value: >
+              constants.automation.manage_registry_replicas=true
+          - name: MAX_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: registry.max_mem
+          - name: MIN_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: registry.min_mem
+          - name: CURRENT_NODE
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: QUOBYTE_BOOTSTRAP_NODE
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: registry.bootstrap_node
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            if [ "${QUOBYTE_BOOTSTRAP_NODE}" = "${CURRENT_NODE}" ]; then
+            sed "s/.*MIN_MEM_REGISTRY=.*/MIN_MEM_REGISTRY=${MIN_MEM}/" -i /etc/default/quobyte
+            sed "s/.*MAX_MEM_REGISTRY=.*/MAX_MEM_REGISTRY=${MAX_MEM}/" -i /etc/default/quobyte
+            mkdir -p /var/lib/quobyte/devices/registry-bootstrap
+            if [ ! -f /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP ]; then
+              mkdir -p /devices/dev1
+              cat > /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP <<EOF
+            device.serial=$(uuidgen)
+            device.model=Kubernetes-hostDir
+            device.type=DIR_DEVICE
+            EOF
+              if [ $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | wc -l) == 0 ]; then
+                echo "device.bootstrap=true" >> /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_SETUP
+              fi
+            fi
+
+            if [ ! -f /var/lib/quobyte/devices/registry-bootstrap/UUID ]; then
+              echo uuid=$(uuidgen) >> /var/lib/quobyte/devices/registry-bootstrap/UUID
+            fi
+            cat /var/lib/quobyte/devices/registry-bootstrap/UUID >> /etc/quobyte/$QUOBYTE_SERVICE.cfg
+            fi
+            exec /bin/bash -x /opt/main.sh
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /bin/bash
+                - -xe
+                - |
+                  if [ "${QUOBYTE_BOOTSTRAP_NODE}" = "${CURRENT_NODE}" ]; then
+                  qmgmt -u api registry remove $(grep device.id= /var/lib/quobyte/devices/registry-bootstrap/QUOBYTE_DEV_ID | cut -d= -f2)
+                  rm -rf /var/lib/quobyte/devices/registry-bootstrap/
+                  fi
+        ports:
+          - name: rpc-tcp
+            containerPort: 7861
+            protocol: TCP
+          - name: rpc-udp
+            containerPort: 7861
+            protocol: UDP
+          - name: http
+            containerPort: 7871
+            protocol: TCP
+        volumeMounts:
+          - mountPath: /lib/modules
+            name: libmodules
+          - mountPath: /var/lib/quobyte
+            name: var-lib-quobyte
+            mountPropagation: Bidirectional
+        readinessProbe:
+          timeoutSeconds: 5
+          httpGet:
+            port: 7871
+            path: /
+        livenessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          httpGet:
+            port: 7871
+            path: /
+      nodeSelector:
+        quobyte_registry: "true"
+      volumes:
+        - name: libmodules
+          hostPath:
+            path: /lib/modules
+        - name: var-lib-quobyte
+          hostPath:
+            path: /var/lib/quobyte
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: data
+  namespace: quobyte
+spec:
+  selector:
+    matchLabels:
+      role: data
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/prometheus'
+        prometheus.io/port: '7873'
+      labels:
+        role: data
+    spec:
+      containers:
+      - name: quobyte-data
+        image: quay.io/quobyte/quobyte-server:2
+        # imagePullPolicy: Always
+        # resources:
+        #   requests:
+        #     memory: "512Mi"
+        #     cpu: "200m"
+
+        # priviliged is required for full device inspector support
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: data
+          - name: QUOBYTE_REGISTRY
+            value: registry
+          - name: MAX_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: data.max_mem
+          - name: MIN_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: data.min_mem
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/.*MIN_MEM_DATA=.*/MIN_MEM_DATA=${MIN_MEM}/" -i /etc/default/quobyte
+            sed "s/.*MAX_MEM_DATA=.*/MAX_MEM_DATA=${MAX_MEM}/" -i /etc/default/quobyte
+            exec /bin/bash -x /opt/main.sh
+        volumeMounts:
+          - mountPath: /lib/modules
+            name: lib-modules
+          - mountPath: /var/lib/quobyte
+            name: var-lib-quobyte
+            mountPropagation: Bidirectional
+        ports:
+          - name: rpc-tcp
+            containerPort: 7873
+            protocol: TCP
+        readinessProbe:
+          timeoutSeconds: 5
+          httpGet:
+            port: 7873
+            path: /
+        livenessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          httpGet:
+            port: 7873
+            path: /
+      nodeSelector:
+        quobyte_data: "true"
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: var-lib-quobyte
+          hostPath:
+            path: /var/lib/quobyte
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: metadata
+  namespace: quobyte
+spec:
+  selector:
+    matchLabels:
+      role: metadata
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/prometheus'
+        prometheus.io/port: '7872'
+      labels:
+        role: metadata
+    spec:
+      containers:
+      - name: quobyte-metadata
+        image: quay.io/quobyte/quobyte-server:2
+        # imagePullPolicy: Always
+        # resources:
+        #   limits:
+            # memory: "1212Mi"
+            # cpu: "200m"
+
+        # priviliged is required for full device inspector support
+        securityContext:
+          privileged: true
+        env:
+          - name: QUOBYTE_SERVICE
+            value: metadata
+          - name: QUOBYTE_REGISTRY
+            value: registry
+          - name: MAX_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: metadata.max_mem
+          - name: MIN_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: metadata.min_mem
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/.*MIN_MEM_METADATA=.*/MIN_MEM_METADATA=${MIN_MEM}/" -i /etc/default/quobyte
+            sed "s/.*MAX_MEM_METADATA=.*/MAX_MEM_METADATA=${MAX_MEM}/" -i /etc/default/quobyte
+            exec /bin/bash -x /opt/main.sh
+        volumeMounts:
+          - mountPath: /lib/modules
+            name: lib-modules
+          - mountPath: /var/lib/quobyte
+            name: var-lib-quobyte
+            mountPropagation: Bidirectional
+        ports:
+          - name: rpc-tcp
+            containerPort: 7872
+            protocol: TCP
+        readinessProbe:
+          timeoutSeconds: 5
+          httpGet:
+            port: 7872
+            path: /
+        livenessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          httpGet:
+            port: 7872
+            path: /
+      nodeSelector:
+        quobyte_metadata: "true"
+      volumes:
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: var-lib-quobyte
+          hostPath:
+            path: /var/lib/quobyte
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    role: qmgmt-pod
+    version: "2"
+  name: qmgmt-pod
+  namespace: quobyte
+spec:
+  containers:
+    - name: qmgmt-pod
+      image: quay.io/quobyte/quobyte-server:2
+      command:
+        - /bin/bash
+        - -xec
+        - |
+          tail -f /dev/null
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: webconsole
+  namespace: quobyte
+spec:
+  template:
+    metadata:
+      labels:
+        role: webconsole
+        version: "2"
+    spec:
+      containers:
+      - name: quobyte-webconsole
+        image: quay.io/quobyte/quobyte-server:2
+        # imagePullPolicy: Always
+        # resources:
+        #   limits:
+        #     memory: "300Mi"
+        #     cpu: "100m"
+        env:
+          - name: QUOBYTE_SERVICE
+            value: "webconsole"
+          - name: QUOBYTE_WEBCONSOLE_PORT
+            value: "8080"
+          - name: QUOBYTE_REGISTRY
+            value: registry
+          - name: QUOBYTE_API
+            value: api
+          - name: MAX_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: webconsole.max_mem
+          - name: MIN_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: webconsole.min_mem
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/MIN_MEM_WEBCONSOLE=.*/MIN_MEM_WEBCONSOLE=${MIN_MEM}/" -i /etc/default/quobyte
+            sed "s/MAX_MEM_WEBCONSOLE=.*/MAX_MEM_WEBCONSOLE=${MAX_MEM}/" -i /etc/default/quobyte
+            exec /bin/bash -x /opt/main.sh
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+      - name: quobyte-api
+        image: quay.io/quobyte/quobyte-server:2
+        env:
+          - name: QUOBYTE_SERVICE
+            value: api
+          - name: QUOBYTE_API_PORT
+            value: "7860"
+          - name: QUOBYTE_REGISTRY
+            value: registry
+          - name: QUOBYTE_LOG_LEVEL
+            value: DEBUG
+          - name: MAX_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: api.max_mem
+          - name: MIN_MEM
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: api.min_mem
+        ports:
+          - name: api
+            containerPort: 7860
+            protocol: TCP
+        command:
+          - /bin/bash
+          - -xec
+          - |
+            sed "s/.*MIN_MEM_API=.*/MIN_MEM_API=${MIN_MEM}/" -i /etc/default/quobyte
+            sed "s/.*MAX_MEM_API=.*/MAX_MEM_API=${MAX_MEM}/" -i /etc/default/quobyte
+            exec /bin/bash -x /opt/main.sh
+        resources:
+          limits:
+            memory: "300Mi"
+            cpu: "100m"
+        readinessProbe:
+            timeoutSeconds: 5
+            tcpSocket:
+              port: 7860
+        livenessProbe:
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+            tcpSocket:
+              port: 7860

@@ -1,0 +1,29 @@
+apiVersion: quobyte.com/v1
+kind: QuobyteService
+metadata:
+  name: quobyte-services
+spec:
+  registry:
+    image: quay.io/quobyte/quobyte-server:2
+    rolling_updates_enabled: true
+    nodes:
+      - qb1
+      - qb2
+      - qb3
+      - qb4
+
+  metadata:
+    image: quay.io/quobyte/quobyte-server:2
+    rolling_updates_enabled: true
+    nodes:
+      - qb1
+      - qb2
+      - qb3
+  data:
+    image: quay.io/quobyte/quobyte-server:2
+    rolling_updates_enabled: true
+    nodes:
+      - qb1
+      - qb2
+      - qb3
+      - qb4
