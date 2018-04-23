@@ -220,8 +220,13 @@ Quobyte supports multiple tenants and provides a secure mapping of containers to
 For a longer read, please see the article on the Quobyte blog:
 [The State of Secure Storage Access in Container Infrastructures](https://www.quobyte.com/blog/2017/03/17/the-state-of-secure-storage-access-in-container-infrastructures/)
 
-TODO: document this
-
+The kubernetes deployments of the Quobyte client use the `--allow-usermapping-in-volumename`, which allows to map all accesses to the
+volume to a particular user/group, independent of the accessing user.
+If you specify `user#group@volume_name` instead of just the volumename,
+the Quobyte client will map all storage accesses to the `user:group`.
+For example, if your container runs internally with id 0, or you have multiple
+arbitrary user ids in your containers, all files in the Quobyte volume will be
+owned by `user:group`.
 
 ## Further Readings
 
