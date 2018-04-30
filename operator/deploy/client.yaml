@@ -52,14 +52,14 @@ spec:
             # other processes cannot write data to this dir.
             chattr +i ${QUOBYTE_MOUNT_POINT}
 
-#            if echo ${QUOBYTE_REGISTRY} | grep -q ","; then
-#              # registries are outside the k8s cluster, pass through and DNS lookup later
-#              ADDR=${QUOBYTE_REGISTRY}
-#            else
-#              # Currently, within the nsenter, k8s dns names cannot be resolved.
-#              ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
-#            fi
-#            echo "QUOBYTE_REGISTRY: ${ADDR}"
+            if echo ${QUOBYTE_REGISTRY} | grep -q ","; then
+              # registries are outside the k8s cluster, pass through and DNS lookup later
+              ADDR=${QUOBYTE_REGISTRY}
+            else
+              # Currently, within the nsenter, k8s dns names cannot be resolved.
+              ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
+            fi
+            echo "QUOBYTE_REGISTRY: ${ADDR}"
 
             /bin/nsenter -t 1 --wd=. -m -- \
               lib/ld-linux-x86-64.so.2 \
