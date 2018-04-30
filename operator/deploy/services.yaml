@@ -162,6 +162,8 @@ spec:
           - mountPath: /var/lib/quobyte
             name: var-lib-quobyte
             mountPropagation: Bidirectional
+          - mountPath: /mnt/quobyte
+            name: mnt-quobyte
         readinessProbe:
           timeoutSeconds: 5
           httpGet:
@@ -182,6 +184,9 @@ spec:
         - name: var-lib-quobyte
           hostPath:
             path: /var/lib/quobyte
+        - name: mnt-quobyte
+            hostPath:
+              path: /mnt/quobyte
 ---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
@@ -241,6 +246,8 @@ spec:
           - mountPath: /var/lib/quobyte
             name: var-lib-quobyte
             mountPropagation: Bidirectional
+          - mountPath: /mnt/quobyte
+            name: mnt-quobyte
         ports:
           - name: rpc-tcp
             containerPort: 7873
@@ -265,6 +272,9 @@ spec:
         - name: var-lib-quobyte
           hostPath:
             path: /var/lib/quobyte
+        - name: mnt-quobyte
+          hostPath:
+            path: /mnt/quobyte
 ---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
@@ -324,6 +334,8 @@ spec:
           - mountPath: /var/lib/quobyte
             name: var-lib-quobyte
             mountPropagation: Bidirectional
+          - mountPath: /mnt/quobyte
+            name: mnt-quobyte
         ports:
           - name: rpc-tcp
             containerPort: 7872
@@ -348,6 +360,9 @@ spec:
         - name: var-lib-quobyte
           hostPath:
             path: /var/lib/quobyte
+        - name: mnt-quobyte
+          hostPath:
+            path: /mnt/quobyte
 ---
 apiVersion: v1
 kind: Pod
