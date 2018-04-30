@@ -185,8 +185,8 @@ spec:
           hostPath:
             path: /var/lib/quobyte
         - name: mnt-quobyte
-            hostPath:
-              path: /mnt/quobyte
+          hostPath:
+            path: /mnt/quobyte
 ---
 apiVersion: extensions/v1beta1
 kind: DaemonSet
