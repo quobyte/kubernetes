@@ -7,23 +7,20 @@ spec:
     image: quay.io/quobyte/quobyte-server:2
     rolling_updates_enabled: true
     nodes:
-      - qb1
-      - qb2
-      - qb3
-      - qb4
-
+      - node1
   metadata:
     image: quay.io/quobyte/quobyte-server:2
     rolling_updates_enabled: true
     nodes:
-      - qb1
-      - qb2
-      - qb3
+      - node1
+      - node2
+      - node3
+      - node4
   data:
     image: quay.io/quobyte/quobyte-server:2
     rolling_updates_enabled: true
     nodes:
-      - qb1
-      - qb2
-      - qb3
-      - qb4
+      - node1
+      - node2
+      - node3
+      - node4

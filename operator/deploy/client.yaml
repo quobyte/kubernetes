@@ -22,12 +22,11 @@ spec:
           operator: "Equal"
           value: "true"
           effect: "NoSchedule"
-      #serviceAccountName: quobyteclientsrv
       containers:
       - name: quobyte-client
         image: quay.io/quobyte/quobyte-client:2
         imagePullPolicy: Always
-        # NOTE(kaisers): The weird if check before mkdir -p is required to not hang on a stale mount
+        # The 'if' check before mkdir -p is required to not hang on a stale mount
         command:
           - /bin/sh
           - -xec
@@ -40,7 +39,8 @@ spec:
               echo "user_allow_other" >> /etcfs/fuse.conf
             fi
             if cut -d" " -f2 /etcfs/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
-              umount ${QUOBYTE_MOUNT_POINT}
+              echo "found existing mount point. Please unmount ${QUOBYTE_MOUNT_POINT} first."
+              # /bin/nsenter -t 1 --wd=. -m -- lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/umount -f ${QUOBYTE_MOUNT_POINT}
             else
               if ! [[ $(ls `dirname ${QUOBYTE_MOUNT_POINT}`|egrep "^`basename ${QUOBYTE_MOUNT_POINT}`$") ]]; then
                 echo "mount point ${QUOBYTE_MOUNT_POINT} does not exist, creating it..."
@@ -59,11 +59,9 @@ spec:
               # Currently, within the nsenter, k8s dns names cannot be resolved.
               ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
             fi
-            echo "QUOBYTE_REGISTRY: ${ADDR}"
+            echo "Resolved QUOBYTE_REGISTRY: ${ADDR}"
 
-            /bin/nsenter -t 1 --wd=. -m -- \
-              lib/ld-linux-x86-64.so.2 \
-              --library-path ./lib \
+            /bin/nsenter -t 1 --wd=. -m -- lib/ld-linux-x86-64.so.2 --library-path ./lib \
             ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename \
               --http-port 55000 -f -l /dev/stdout -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} \
               ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
@@ -71,11 +69,17 @@ spec:
           privileged: true
         env:
           - name: QUOBYTE_CLIENT_LOG_LEVEL
-            value: INFO
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: client.log_level
           - name: QUOBYTE_REGISTRY
-            value: registry.quobyte
+            valueFrom:
+              configMapKeyRef:
+                name: quobyte-config
+                key: client.registry
           - name: QUOBYTE_MOUNT_POINT
-            # Note(kaisers): the mount point has to be a subdir of the volume(Mount)
+            # Note that the mount point has to be a subdir of the volume(Mount)
             value: /var/lib/kubelet/plugins/kubernetes.io~quobyte
           - name: NODENAME
             valueFrom:

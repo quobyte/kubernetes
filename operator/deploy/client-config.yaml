@@ -5,9 +5,9 @@ metadata:
   namespace: quobyte
 spec:
     image: quay.io/quobyte/quobyte-client:2
-    rolling_updates_enabled: false
+    rolling_updates_enabled: true
     nodes:
-      - qb1
-      - qb2
-      - qb3
-      - qb4
+      - node1
+      - node2
+      - node3
+      - node4

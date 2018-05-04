@@ -73,7 +73,7 @@ spec:
       containers:
       - name: quobyte-registry
         image: quay.io/quobyte/quobyte-server:2
-        # imagePullPolicy: Always
+        imagePullPolicy: Always
         # resources:
         #   limits:
         #     memory: "512Mi"
@@ -209,7 +209,7 @@ spec:
       containers:
       - name: quobyte-data
         image: quay.io/quobyte/quobyte-server:2
-        # imagePullPolicy: Always
+        imagePullPolicy: Always
         # resources:
         #   requests:
         #     memory: "512Mi"
@@ -240,6 +240,18 @@ spec:
             sed "s/.*MIN_MEM_DATA=.*/MIN_MEM_DATA=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/.*MAX_MEM_DATA=.*/MAX_MEM_DATA=${MAX_MEM}/" -i /etc/default/quobyte
             exec /bin/bash -x /opt/main.sh
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /bin/bash
+                - -xe
+                - |
+                  if grep -q uuid /etc/quobyte/data.cfg; then
+                    UUID=`grep "uuid=" /etc/quobyte/data.cfg | cut -d= -f 2`
+                    echo "Deregistering service $UUID"
+                    qmgmt -u api service deregister $UUID
+                  fi
         volumeMounts:
           - mountPath: /lib/modules
             name: lib-modules
@@ -297,7 +309,7 @@ spec:
       containers:
       - name: quobyte-metadata
         image: quay.io/quobyte/quobyte-server:2
-        # imagePullPolicy: Always
+        imagePullPolicy: Always
         # resources:
         #   limits:
             # memory: "1212Mi"
@@ -328,6 +340,18 @@ spec:
             sed "s/.*MIN_MEM_METADATA=.*/MIN_MEM_METADATA=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/.*MAX_MEM_METADATA=.*/MAX_MEM_METADATA=${MAX_MEM}/" -i /etc/default/quobyte
             exec /bin/bash -x /opt/main.sh
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /bin/bash
+                - -xe
+                - |
+                  if grep -q uuid /etc/quobyte/metadata.cfg; then
+                    UUID=`grep "uuid=" /etc/quobyte/data.cfg | cut -d= -f 2`
+                    echo "Deregistering service $UUID"
+                    qmgmt -u api service deregister $UUID
+                  fi
         volumeMounts:
           - mountPath: /lib/modules
             name: lib-modules
@@ -364,24 +388,6 @@ spec:
           hostPath:
             path: /mnt/quobyte
 ---
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    role: qmgmt-pod
-    version: "2"
-  name: qmgmt-pod
-  namespace: quobyte
-spec:
-  containers:
-    - name: qmgmt-pod
-      image: quay.io/quobyte/quobyte-server:2
-      command:
-        - /bin/bash
-        - -xec
-        - |
-          tail -f /dev/null
----
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -397,7 +403,7 @@ spec:
       containers:
       - name: quobyte-webconsole
         image: quay.io/quobyte/quobyte-server:2
-        # imagePullPolicy: Always
+        imagePullPolicy: Always
         # resources:
         #   limits:
         #     memory: "300Mi"
@@ -428,6 +434,18 @@ spec:
             sed "s/MIN_MEM_WEBCONSOLE=.*/MIN_MEM_WEBCONSOLE=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/MAX_MEM_WEBCONSOLE=.*/MAX_MEM_WEBCONSOLE=${MAX_MEM}/" -i /etc/default/quobyte
             exec /bin/bash -x /opt/main.sh
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /bin/bash
+                - -xe
+                - |
+                  if grep -q uuid /etc/quobyte/webconsole.cfg; then
+                    UUID=`grep "uuid=" /etc/quobyte/data.cfg | cut -d= -f 2`
+                    echo "Deregistering service $UUID"
+                    qmgmt -u api service deregister $UUID
+                  fi
         ports:
           - name: http
             containerPort: 8080
@@ -464,6 +482,18 @@ spec:
             sed "s/.*MIN_MEM_API=.*/MIN_MEM_API=${MIN_MEM}/" -i /etc/default/quobyte
             sed "s/.*MAX_MEM_API=.*/MAX_MEM_API=${MAX_MEM}/" -i /etc/default/quobyte
             exec /bin/bash -x /opt/main.sh
+        lifecycle:
+          preStop:
+            exec:
+              command:
+                - /bin/bash
+                - -xe
+                - |
+                  if grep -q uuid /etc/quobyte/api.cfg; then
+                    UUID=`grep "uuid=" /etc/quobyte/data.cfg | cut -d= -f 2`
+                    echo "Deregistering service $UUID"
+                    qmgmt -u api service deregister $UUID
+                  fi
         resources:
           limits:
             memory: "300Mi"

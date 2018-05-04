@@ -1,87 +1,240 @@
-# Prerequisites
-- Kubernetes 1.9 with mountPropagation feature enabled.
-- Vanilla Kubernetes 1.10
-- Unformatted storage devices (use wipefs to clean devices)
+# Bootstrap and Operate a Quobyte Cluster in Kubernetes with the Operator
+This guide shows you how to bootstrap a Quobyte cluster on a set of kubernetes
+which have some empty storage devices ready to be used for a distributed storage system. The operator simplifies the cluster bootstrap and management, and the latest Quobyte features let you format and set up the cluster from the web console.
+Can it be any easier and faster?
 
-# Deploy Operator
-The Quobyte operator helps to run a full Quobyte cluster in kubernetes, or to
-operate Quobyte clients to provide persisted volumes to pods.
+## Prerequisites
+- Kubernetes 1.9 is fully supported by the operator
+- To use Quobyte 2.0 features like automatically mounting Quobyte devices,
+  or the formatting and preparation of unformatted devices requires the *mountPropagation* kubernetes feature, which is a gated feature in kubernetes 1.9
+  and comes in beta in kubernetes 1.10. This guide assumes that you have the *mountPropagation* feature enabled on your cluster.
+- A cluster which consists of at least 4 nodes, with 2 unformatted devices each.
+  In this guide we will refer to the nodes as node1 to node4.
 
-In any case, you first need to create the quobyte namespace and install the operator.
-```
+## Deploy Operator
+Create the *quobyte* namespace. This is where the operator and the cluster lives.
+``` bash
 kubectl create -f quobyte-ns.yaml
-kubectl -n quobyte create -f operator.yaml
-kubectl -n quobyte create -f operator-config.yaml
+```
+Quobyte runs best with 3 replicas of the registry, where we require 1 bootstrapped registry. To make the setup as easy as possible, we defined an ephemeral registry, which is used to bootstrap the cluster. The final cluster will have registry devices on nodes 2, 3, and 4, so we will use node1 for bootstrap.
+
+The `quobyte-config.yaml` file provides a `registry.bootstrap_node` option and allows to fine tune the memory limits for the services. Edit the file to point to your bootstrap registry.
+
+``` yaml
+  registry.bootstrap_node: "node4"
 ```
 
-# Configure Quobyte Services
+Now install the operator to the quobyte namespace.
+``` bash
+kubectl -n quobyte create -f quobyte-config.yaml
+kubectl -n quobyte create -f operator.yaml
+```
+
+## Configure Quobyte Services
 To run the Quobyte services in kubernetes, first edit the services-config.yaml file,
 and determine which node should run which services.
 
-A new Quobyte instance needs to be bootstrapped. This can be achieved by either formatting
-a device and using the qbootstrap tool, or by marking a node as `registry.bootstrap_node`
-in the services-config.yaml. A registry pod which is started on that node will
-create an ephemeral bootstrap registry, which can be used to start, format,
-and persist the new cluster. When persisted registry devices are added, it is safe
-and recommended to delete the ephemeral bootstrap registry node.
+We chose node4 to be the bootstrap registry, but we need to define 3 other nodes to persist the fully replicated cluster. We also recommend to start at least 3 metadata services and data services on all nodes which contain devices which should store your valuable information. Edit the `services-config.yaml` to match your cluster:
+
+```yaml
+  registry:
+    image: quay.io/quobyte/quobyte-server:2
+    rolling_updates_enabled: true
+    nodes:
+      - node1 # will become the ephemeral bootstrap node
+  metadata:
+    image: quay.io/quobyte/quobyte-server:2
+    rolling_updates_enabled: true
+    nodes:
+      - node1
+      - node2
+      - node3
+      - node4
+  data:
+    image: quay.io/quobyte/quobyte-server:2
+    rolling_updates_enabled: true
+    nodes:
+      - node1
+      - node2
+      - node3
+      - node4
+```
+
+When the services are installed, the operator will start to deploy the services to the target nodes.
 ```
 kubectl -n quobyte create -f services.yaml
 kubectl -n quobyte create -f services-config.yaml
+kubectl -n quobyte create -f qmgmt-pod.yaml
+
+kubectl -n quobyte get pods -o wide -w
+```
+Now you should see all configured pods running.
+You will also see a *qmgmt-pod* and a *webconsole* running.
+The qmgmt-pod gives you full cli access to the cluster. Lets check that the
+primary registry is running:
+
+```bash
+kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api registry list
 ```
 
-When you update the container or add or remove nodes, reapply the config and
-let the operator work.
+Now let's list all unformatted devices which the data and metadata services found
+and could be formatted now.
 
+```bash
+kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api device list-unformatted
 ```
-kubectl -n quobyte apply -f services-config.yaml
-```
 
-Now you should see all pods running. The non-bootsrap registries will crash-loop
-until they find a quobyte registry device. So let's create some quobyte devices.
+You can either proceed to set up the devices with qmgmt or jump over to the webconsole to get some visual support.
 
-The webconsole pod is running and you can port forward it like:
+Unless you already have set up an ingress to access the service, you can acceess the console with a port forward
 ```
 kubectl -n quobyte port-forward "$(kubectl get po -owide -n quobyte | grep webconsole | awk '{print $1}')" 8080:8080
 ```
+Then point your browser to http://localhost:8080 and follow the setup wizard.
 
-Then point your browser to http://localhost:8080 and follow the installation wizard.
+The [Devices tab](http://localhost:8080/#DeviceListState:) will show you all unformatted devices. Please note that even if multiple services are running on the same node, only one of the Quobyte pods will be responsible to mount and format devices.
 
+## Make the Quobyte Cluster Persistent
+The ephemereal registry is great for bootstrapping and trying out a Quobyte cluster.
+So if you're just interested in a demo, you can safely skip this chapter and just
+use a single registry to run your cluster. But please note, once the registry pod is terminated,
+the Quobyte cluster becomes unsuable.
 
-# Configure Quobyte Clients
-If you want to manage Quobyte clients only, edit the client-config.yaml,
-choose the latest image version and add the names of the nodes, where a
-Quobyte client should run, to the `nodes` list.
+To make the cluster persistent, we first need to create 3 registry devices.
+There must be only one registry device per registry service, so choose one device from each of the other services and create registry devices on them.
+A maintenance task will run and format and set up the devices. Give the webconsole some seconds to retrieve the last system state and the devices will show up as
+unassociated devices.
 
+Now let's spin up our three target registries.
+Edit the services-config.yaml again and add nodes 2 to 4 as registries.
+
+```yaml
+Edit the `services-config.yaml` to match your cluster
+
+```yaml
+  registry:
+    image: quay.io/quobyte/quobyte-server:2
+    rolling_updates_enabled: true
+    nodes:
+      - node1 # will become the ephemeral bootstrap node
+      - node2
+      - node3
+      - node4
 ```
-kubectl -n quobyte create -f client.yaml
+
+An update to the services-config CRD triggers the operator, which will start the
+registries then.
+
+```bash
+kubectl -n quobyte apply -f services-config.yaml
 ```
 
-The client config represents the desired state of your cluster. So adjust the
-version and the hosts, where the operator should deploy clients.
+Wait until the pods are running and check that Quobyte found the devices.
 
+```bash
+kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api device list
+
+Id  Host            Mode    Disk Used  Disk Avail  Services  LED Mode  Tags  
+1   registry-vfz59  ONLINE  4 GB       40 GB       REGISTRY  OFF       hdd   
+2   registry-f7szc  ONLINE  34 MB      21 GB       REGISTRY  OFF       hdd   
+3   registry-zq2vh  ONLINE  34 MB      21 GB       REGISTRY  OFF       hdd   
+4   registry-4xxkk  ONLINE  34 MB      21 GB       REGISTRY  OFF       hdd   
 ```
+
+We see a total of 4 registry devices, but the registry will only use 3 of them.
+```bash
+kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api registry list
+
+Primary  Id  Host            Mode    
+-        3   registry-zq2vh  ONLINE  
+-        4   registry-4xxkk  ONLINE  
+1        1   registry-vfz59  ONLINE  
+```
+
+If we see 3 ONLINE registries, the work of the ephemeral bootstrap node is done
+and it is safe to delete it. So remove it from the `services-config.yaml`
+```yaml
+  registry:
+    image: quay.io/quobyte/quobyte-server:2
+    rolling_updates_enabled: true
+    nodes:
+      - node2
+      - node3
+      - node4
+```
+and update the service-config. The operator will then terminate the ephemeral registry.
+```bash
+kubectl -n quobyte apply -f services-config.yaml
+```
+Wait some seconds and check that all 3 persisted registries are ONLINE.
+```bash
+kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api registry list
+P
+rimary  Id  Host            Mode    
+-        1   registry-vfz59  ONLINE  
+-        3   registry-zq2vh  ONLINE  
+1        4   registry-4xxkk  ONLINE  
+```
+
+As a last step, you should decommission the ephemeral device, since it will never come back.
+```bash
+kubectl -n quobyte exec -it qmgmt-pod -- qmgmt -u api device update status 1 DECOMMISSIONED
+```
+
+## Create Data and Metadata Devices
+Now we need some data and metadata devices to actually store data.
+From the webconsole, either format the remaining devices according to your needs,
+or choose a device and *Set devices types* to add Data or Metadata contents to the device.
+
+Now you have a fully working Quobyte cluster. For further configuration and creation of volumes, please refer to the Quobyte documentation.
+
+# Deploy Quobyte Clients
+The operator can deploy and manage Quobyte clients - which serve the volumes to your application pods. Every kubernetes node which should provide access to Quobyte storage, has to run a Quobyte client pod.
+
+If the operator finds a client CRD, it will start to deploy the according pods.
+First edit the `client-config.yaml`
+
+```yaml
+spec:
+    image: quay.io/quobyte/quobyte-client:2
+    rolling_updates_enabled: true
+    nodes:
+      - node1
+      - node2
+      - node3
+      - node4
+```
+
+```bash
 kubectl -n quobyte create -f client-config.yaml
+kubectl -n quobyte create -f client.yaml
 ```
 
 Once the client-config is created, you should see pods being started on the
 desired hosts.
 
-If you add or remove clients, edit the config and update it like:
+If you add or remove clients, edit the client-config.yaml and update it with
 
 ```
 kubectl -n quobyte apply -f client-config.yaml
 ```
 
+When the clients are ready, you can start using Quobyte volumes in your pods.
+Please have a look at [Volume Access](../using_quobyte_volumes.md) for examples.
+
 # Rolling Updates
 The operator supports rolling updates. When you change the container version
 in the client-config.yaml or services-config.yaml, and rolling updates are enabled, the operator will upgrade one node after the other.
 
-Since restarting a client pod would terminate currently opened files, the operator will taint the node and drain all pods to other nodes. When the
-Quobyte client is updated, the node is untainted again.
-
-Quobyte service containers on the other hand, don't require to drain other pods,
-but a careful timing between pod restarts, to always ensure availability of
+Quobyte service containers are updated one after the other with careful timing between pod restarts, to always ensure availability of
 the Quobyte services.
+
+All pods from all other namespaces can access Quobyte volumes which are managed by the client. Since a client update requires a
+pod restart, all other pods on the same node, which currently access a Quobyte volume, need to be stopped.
+It's not a good idea to give an operator full permission to drain a full node, we decided to go for a defensive mode.
+For every node to upgrade, the operator checks for other pods with Quobyte volumes mounted. If no pods are found, the client is restarted immediately.
+If pods are found, they are listed on the operator's status page. The operator also supports to retrieve its status as json.
+The administrator will then need to manually stop or drain the pods.   
 
 # Uninstall Operator
 If you want to remove all services or clients, remove the config files, before

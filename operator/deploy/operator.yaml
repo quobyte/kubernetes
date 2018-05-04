@@ -63,12 +63,26 @@ spec:
     metadata:
       labels:
         name: quobyte-operator
+        role: quobyte-operator
     spec:
       serviceAccountName: quobyte-operator
       containers:
       - name: operator
-        image: quay.io/venkat_443/operator:3
+        image: quay.io/venkat_443/operator:5
         imagePullPolicy: Always
         ports:
         - containerPort: 7878
           protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quobyte-operator
+  namespace: quobyte
+spec:
+  ports:
+    - name: http
+      port: 7878
+      protocol: TCP
+  selector:
+    role: quobyte-operator
