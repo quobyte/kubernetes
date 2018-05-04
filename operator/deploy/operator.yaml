@@ -68,7 +68,7 @@ spec:
       serviceAccountName: quobyte-operator
       containers:
       - name: operator
-        image: quay.io/venkat_443/operator:5
+        image: quay.io/quobyte/k8s-operator:1
         imagePullPolicy: Always
         ports:
         - containerPort: 7878
