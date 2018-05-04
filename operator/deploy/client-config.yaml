@@ -5,7 +5,8 @@ metadata:
   namespace: quobyte
 spec:
     image: quay.io/quobyte/quobyte-client:2
-    rolling_updates_enabled: true
+    # rolling updates are experimental
+    rolling_updates_enabled: false
     nodes:
       - node1
       - node2

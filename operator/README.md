@@ -223,11 +223,11 @@ When the clients are ready, you can start using Quobyte volumes in your pods.
 Please have a look at [Volume Access](../using_quobyte_volumes.md) for examples.
 
 # Rolling Updates
+Note: Rolling updates are currently in Beta.
 The operator supports rolling updates. When you change the container version
 in the client-config.yaml or services-config.yaml, and rolling updates are enabled, the operator will upgrade one node after the other.
 
-Quobyte service containers are updated one after the other with careful timing between pod restarts, to always ensure availability of
-the Quobyte services.
+Quobyte service containers are updated with careful timing between pod restarts, to always ensure availability of the Quobyte services.
 
 All pods from all other namespaces can access Quobyte volumes which are managed by the client. Since a client update requires a
 pod restart, all other pods on the same node, which currently access a Quobyte volume, need to be stopped.
@@ -235,6 +235,11 @@ It's not a good idea to give an operator full permission to drain a full node, w
 For every node to upgrade, the operator checks for other pods with Quobyte volumes mounted. If no pods are found, the client is restarted immediately.
 If pods are found, they are listed on the operator's status page. The operator also supports to retrieve its status as json.
 The administrator will then need to manually stop or drain the pods.   
+
+The operator comes with a service and a status page. With kubectl, you can reach it on http://localhost:7878
+```bash
+kubectl -n quobyte port-forward quobyte-operator-xzy 7878:7878
+```
 
 # Uninstall Operator
 If you want to remove all services or clients, remove the config files, before

@@ -5,12 +5,12 @@ metadata:
 spec:
   registry:
     image: quay.io/quobyte/quobyte-server:2
-    rolling_updates_enabled: true
+    rolling_updates_enabled: false
     nodes:
       - node1
   metadata:
     image: quay.io/quobyte/quobyte-server:2
-    rolling_updates_enabled: true
+    rolling_updates_enabled: false
     nodes:
       - node1
       - node2
@@ -18,7 +18,7 @@ spec:
       - node4
   data:
     image: quay.io/quobyte/quobyte-server:2
-    rolling_updates_enabled: true
+    rolling_updates_enabled: false
     nodes:
       - node1
       - node2
