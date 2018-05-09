@@ -12,6 +12,20 @@ subjects:
   namespace: quobyte
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: quobyte-operator
+  namespace: quobyte
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: quobyte-operator
+subjects:
+- kind: ServiceAccount
+  name: quobyte-operator
+  namespace: quobyte
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: quobyte-operator
@@ -22,10 +36,6 @@ rules:
   - customresourcedefinitions
   verbs:
   - "*"
-- apiGroups: ["extensions"]
-  resources:
-  - daemonsets
-  verbs: ["list", "get", "delete", "create", "patch"]
 - apiGroups:
   - quobyte.com
   resources:
@@ -35,8 +45,16 @@ rules:
   - "*"
 - apiGroups: [""]
   resources:
+  - persistentvolumeclaims
+  verbs: ["get"]
+- apiGroups: [""]
+  resources:
   - pods
-  verbs: ["list", "get", "delete", "create", "watch"]
+  verbs: ["list"]
+- apiGroups: ["storage.k8s.io"]
+  resources:
+  - storageclasses
+  verbs: ["get"]
 - apiGroups: [""]
   resources:
   - nodes
@@ -45,6 +63,21 @@ rules:
   resources:
   - namespaces
   verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  namespace: quobyte
+  name: quobyte-operator
+rules:
+- apiGroups: [""]
+  resources:
+  - pods
+  verbs: ["list", "get", "delete", "create", "watch"]
+- apiGroups: ["extensions"]
+  resources:
+  - daemonsets
+  verbs: ["get","patch"]
 ---
 apiVersion: v1
 kind: ServiceAccount
