@@ -21,7 +21,7 @@ Quobyte runs best with 3 replicas of the registry, where we require 1 bootstrapp
 The `quobyte-config.yaml` file provides a `registry.bootstrap_node` option and allows to fine tune the memory limits for the services. Edit the file to point to your bootstrap registry.
 
 ``` yaml
-  registry.bootstrap_node: "node4"
+  registry.bootstrap_node: "node1"
 ```
 
 Now install the operator to the quobyte namespace.
@@ -241,7 +241,7 @@ The operator comes with a service and a status page. With kubectl, you can reach
 kubectl -n quobyte port-forward quobyte-operator-xzy 7878:7878
 ```
 
-# Uninstall Operator
+# Uninstall Quobyte with Operator
 If you want to remove all services or clients, remove the config files, before
 you delete the deployments or the operator. This will terminate the scheduled pods and remove the all labels, which the operator applied to any nodes.
 ```
