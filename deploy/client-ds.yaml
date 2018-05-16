@@ -47,13 +47,22 @@ spec:
             # other processes cannot write data to this dir.
             chattr +i ${QUOBYTE_MOUNT_POINT}
 
-            if echo ${QUOBYTE_REGISTRY} | grep -q ","; then
-              # registries are outside the k8s cluster, pass through and DNS lookup later
-              ADDR=${QUOBYTE_REGISTRY}
-            else
-              # Currently, within the nsenter, k8s dns names cannot be resolved.
-              ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
-            fi
+            # convert QUOBYTE_REGISTRY to IPs
+            # QUOBYTE_REGISTRY is a comma separated value of registry endpoints
+            # e.g., s1.example.com:5681,s2.example.com:5681,s3.example.com:5681
+            # or it can be a single value: s.example.com:5681
+            registry_ips=
+
+            IFS=','
+            for endpoint in $QUOBYTE_REGISTRY; do
+                name=$(echo $endpoint | awk '{split($0,a,":"); print a[1]}')
+                port=$(echo $endpoint | awk '{split($0,a,":"); print a[2]}')
+                ip=$(nslookup $name | grep $name -A2 | grep Address | cut -d':' -f2 | awk '{print $1}')
+                registry_ips="$ip:$port $registry_ips"
+            done
+            unset IFS
+
+            ADDR=$(echo $registry_ips | tr ' ' ',')
             echo "QUOBYTE_REGISTRY: ${ADDR}"
 
             /bin/nsenter -t 1 --wd=. -m -- \
