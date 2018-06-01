@@ -86,7 +86,11 @@ spec:
             # Hence, for k8s internal Quobyte clusters, we need to pre-resolve the current ips, and let the client
             # work with ips and not dns names.
             if [ "$QUOBYTE_REGISTRY" == "registry" ] || [ "$QUOBYTE_REGISTRY" == "registry.quobyte" ] ; then
-              ADDR=$(echo $(nslookup ${QUOBYTE_REGISTRY} | grep -A10 -m1 -e 'Name:' | grep Address | awk '{split($0,a,":"); print a[2]}'  | awk '{print $1":7861"}') | tr ' ' ,)
+              registry_ips=
+              for ip in $(nslookup ${QUOBYTE_REGISTRY} | grep ${QUOBYTE_REGISTRY} -A2 | grep Address | cut -d':' -f2 | awk '{print $1}'); do
+                registry_ips="$ip $registry_ips"
+              done
+              ADDR=$(echo $registry_ips | tr ' ' ',')
               echo "Assuming to connect to k8s hosted Quobyte cluster. Resolved DNS to: '$ADDR'"
             else
               ADDR=${QUOBYTE_REGISTRY}
