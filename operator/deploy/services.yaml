@@ -157,6 +157,8 @@ spec:
             containerPort: 7871
             protocol: TCP
         volumeMounts:
+          - mountPath: /run/udev
+            name: host-udev
           - mountPath: /lib/modules
             name: libmodules
           - mountPath: /var/lib/quobyte
@@ -178,6 +180,9 @@ spec:
       nodeSelector:
         quobyte_registry: "true"
       volumes:
+        - name: host-udev
+          hostPath:
+            path: /run/udev
         - name: libmodules
           hostPath:
             path: /lib/modules
@@ -253,6 +258,8 @@ spec:
                     qmgmt -u api service deregister $UUID
                   fi
         volumeMounts:
+          - mountPath: /run/udev
+            name: host-udev
           - mountPath: /lib/modules
             name: lib-modules
           - mountPath: /var/lib/quobyte
@@ -278,6 +285,9 @@ spec:
       nodeSelector:
         quobyte_data: "true"
       volumes:
+        - name: host-udev
+          hostPath:
+            path: /run/udev
         - name: lib-modules
           hostPath:
             path: /lib/modules
@@ -353,6 +363,8 @@ spec:
                     qmgmt -u api service deregister $UUID
                   fi
         volumeMounts:
+          - mountPath: /run/udev
+            name: host-udev
           - mountPath: /lib/modules
             name: lib-modules
           - mountPath: /var/lib/quobyte
@@ -378,6 +390,9 @@ spec:
       nodeSelector:
         quobyte_metadata: "true"
       volumes:
+        - name: host-udev
+          hostPath:
+            path: /run/udev
         - name: lib-modules
           hostPath:
             path: /lib/modules

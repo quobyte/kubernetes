@@ -49,6 +49,8 @@ spec:
             sed "s/.*MAX_MEM_DATA=.*/MAX_MEM_DATA=${MAX_MEM}/" -i /etc/default/quobyte
             exec /bin/bash -x /opt/main.sh
         volumeMounts:
+          - mountPath: /run/udev
+            name: host-udev
           - mountPath: /lib/modules
             name: lib-modules
           - mountPath: /mnt/quobyte
@@ -74,6 +76,9 @@ spec:
       nodeSelector:
         quobyte_data: "true"
       volumes:
+        - name: host-udev
+          hostPath:
+            path: /run/udev
         - name: lib-modules
           hostPath:
             path: /lib/modules
