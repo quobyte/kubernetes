@@ -34,7 +34,7 @@ kubectl -n quobyte create -f operator.yaml
 To run the Quobyte services in kubernetes, first edit the services-config.yaml file,
 and determine which node should run which services.
 
-We chose node4 to be the bootstrap registry, but we need to define 3 other nodes to persist the fully replicated cluster. We also recommend to start at least 3 metadata services and data services on all nodes which contain devices which should store your valuable information. Edit the `services-config.yaml` to match your cluster:
+We chose node1 to be the bootstrap registry, but we need to define 3 other nodes to persist the fully replicated cluster. We also recommend to start at least 3 metadata services and data services on all nodes which contain devices which should store your valuable information. Edit the `services-config.yaml` to match your cluster:
 
 ```yaml
   registry:
