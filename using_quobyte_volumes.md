@@ -124,7 +124,7 @@ type: kubernetes.io/quobyte
 ```
 
 The password and user strings are base64 encoded and can be created like
-`echo "quobyte" | base64`.
+`echo -n "quobyte" | base64`.
 
 ```bash
 $ kubectl -n kube-system create -f volumes/quobyte-admin-secret.yaml
