@@ -62,7 +62,7 @@ spec:
             port: 55000
             path: /
         command:
-          - /bin/sh
+          - /bin/bash
           - -xec
           - |
             if [[ ! -f /etcfs/fuse.conf ]]; then
@@ -120,7 +120,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["/bin/sh", "-xc", "/bin/nsenter -t 1 --wd=. -m -- lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/umount -f ${QUOBYTE_MOUNT_POINT}"]
+              command: ["/bin/bash", "-xc", "/bin/nsenter -t 1 --wd=. -m -- lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/umount -f ${QUOBYTE_MOUNT_POINT}"]
       hostPID: true
       nodeSelector:
         # operator currently supports only single selector
