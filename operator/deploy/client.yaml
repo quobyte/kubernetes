@@ -31,7 +31,7 @@ spec:
           effect: "NoSchedule"
       containers:
       - name: quobyte-client
-        image: quay.io/quobyte/quobyte-client:2.3
+        image: quay.io/quobyte/quobyte-client:2
         imagePullPolicy: Always
         env:
           - name: QUOBYTE_CLIENT_LOG_LEVEL
