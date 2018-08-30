@@ -1,7 +1,8 @@
 # Bootstrap and Operate a Quobyte Cluster in Kubernetes with the Operator
-This guide shows you how to bootstrap a Quobyte cluster on a set of kubernetes
+This guide shows you how to bootstrap a Quobyte cluster on a set of kubernetes nodes
 which have some empty storage devices ready to be used for a distributed storage system. The operator simplifies the cluster bootstrap and management, and the latest Quobyte features let you format and set up the cluster from the web console.
-Can it be any easier and faster?
+
+For a quick overview, we have prepared a high level blog post: [“Quobernetes” or How to Enable Simple and Efficient Storage Operations for Kubernetes](https://www.quobyte.com/blog/2018/08/27/quobernetes-is-kubernetes-with-quobyte-software-storage/)
 
 ## Prerequisites
 - Kubernetes 1.9 is fully supported by the operator
