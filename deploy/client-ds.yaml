@@ -62,7 +62,8 @@ spec:
             fi
             if cut -d" " -f2 /etcfs/mtab | grep -q ${QUOBYTE_MOUNT_POINT}; then
               echo "found existing mount point on host. Trying to umount ${QUOBYTE_MOUNT_POINT}"
-              /bin/nsenter -t 1 --wd=. -m -- lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/umount -f ${QUOBYTE_MOUNT_POINT}
+              /bin/nsenter -t 1 -m -- /bin/umount -f ${QUOBYTE_MOUNT_POINT}
+              sleep 1 # give os the chance to clean up everything.
             else
               if ! [[ $(ls `dirname ${QUOBYTE_MOUNT_POINT}`|egrep "^`basename ${QUOBYTE_MOUNT_POINT}`$") ]]; then
                 echo "mount point ${QUOBYTE_MOUNT_POINT} does not exist, creating it..."
@@ -98,6 +99,7 @@ spec:
             ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename \
               --http-port 55000 -f -l /dev/stdout -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} \
               ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
+
         securityContext:
           privileged: true
         volumeMounts:
@@ -108,7 +110,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["/bin/bash", "-xc", "/bin/nsenter -t 1 --wd=. -m -- lib/ld-linux-x86-64.so.2 --library-path ./lib ./bin/umount -f ${QUOBYTE_MOUNT_POINT}"]
+              command: ["/bin/bash", "-xc", "/bin/nsenter -t 1 -m -- /bin/umount -f ${QUOBYTE_MOUNT_POINT}"]
       hostPID: true
       nodeSelector:
         quobyte_client: "true"
