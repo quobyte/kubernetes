@@ -108,7 +108,7 @@ spec:
             /bin/nsenter -t 1 --wd=. -m -- \
               lib/ld-linux-x86-64.so.2 \
               --library-path ./lib \
-            ./bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename \
+              /usr/bin/mount.quobyte --hostname ${NODENAME} --allow-usermapping-in-volumename \
               --http-port 55000 -f -l /dev/stdout -d ${QUOBYTE_CLIENT_LOG_LEVEL} ${OPTS} \
               ${ADDR}/ ${QUOBYTE_MOUNT_POINT}
         securityContext:
