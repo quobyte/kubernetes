@@ -22,7 +22,8 @@ Once the namespace is created, deploy required RBAC and the operator.
 ``` bash
 kubectl -n quobyte create -f operator.yaml
 ```
-## Configure Quobyte Services with Operaoar (Optional)
+
+## Configure Quobyte Services with the Operator
 Quobyte runs best with 3 replicas of the registry, where we require 1 bootstrapped registry. To make the setup as easy as possible, we defined an ephemeral registry, which is used to bootstrap the cluster. The final cluster will have registry devices on nodes 2, 3, and 4, so we will use node1 for bootstrap.
 
 The `quobyte-config.yaml` file provides a `registry.bootstrap_node` option and allows to fine tune the memory limits for the services. Edit the file to point to your bootstrap registry.
@@ -37,8 +38,9 @@ kubectl -n quobyte create -f quobyte-config.yaml
 kubectl -n quobyte create -f services.yaml
 ```
 
-To run the Quobyte services in kubernetes, first edit the services-config.yaml file,
-and determine which node should run which services.
+To run the Quobyte services in kubernetes, first edit the services-config.yaml file, replace the node1-node4 entries with a list of your nodes
+and determine which node should run which services. The number of nodes is arbitrary but we recommend using 4+ nodes in order to be able handle
+outage scenarios, etc.
 
 We chose node1 to be the bootstrap registry, but we need to define 3 other nodes to persist the fully replicated cluster. We also recommend to start at least 3 metadata services and data services on all nodes which contain devices which should store your valuable information. Edit the `services-config.yaml` to match your cluster:
 
@@ -51,7 +53,7 @@ spec:
 registry:
   daemonSetName: registry
   nodes:
-    - node1 # will become the ephimeral bootstrap device
+    - node1 # will become the ephemeral bootstrap device
 metadata:
   daemonSetName: metadata
   nodes:
