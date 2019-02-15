@@ -19,6 +19,11 @@ EOF
 $ systemctl daemon-reload && systemctl restart docker
 ```
 
+Also make sure your Kubernetes cluster runs with the `MountPropagation` feature
+gate enabled for kubelets as well as kube-apiservers. Refer to a
+[feature support matrix](https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/)
+for details.
+
 ## Client setup
 This guide assumes that you have a dedicated Quobyte server running and you
 want to provide access to Quobyte volumes to pods running in Kubernetes.
@@ -26,6 +31,17 @@ want to provide access to Quobyte volumes to pods running in Kubernetes.
 To access a Quobyte volume a pod has to run on a Kubernetes node which has a
 Quobyte client running. The client runs inside of a Pod and makes the Quobyte
 storage accessible to other pods.
+
+We provide two different DaemonSet definitions: the [recommended one](deploy/client-ds.yaml)
+and [legacy one](deploy/client-ds-legacy.yaml). The former can be used only with
+explicit user and group mapping. The latter allows you to resolve user and group
+identity using a host Name Service Switch (NSS), which we do not recommend as
+this approach poses certain security and system stability risks. We provide the
+legacy DaemonSet configuration for backward compatibility reasons only. If using
+identity mapping feature is not suitable for your deployment scenario we
+recommend you to create a customized version of our client Docker image. This
+way you can apply necessary changes in the container's NSS facility to meet your
+requirements.
 
 Quobyte clients run in the quobyte namespace.
 ```bash
@@ -37,11 +53,9 @@ To connect to Quobyte, the client needs to resolve the address of the registry.
 It is configured in the client-ds.yaml DaemonSet definition:
 ```yaml
 env:
-  - name: QUOBYTE_REGISTRY
-    value: registry.quobyte
-```
-If you have a QNS (Quobyte Name Service), the value for QUOBYTE_REGISTRY might
-look like `<qnsid>.myquobyte.net`
+  - name: QUOBYTE_REGISTRY value: registry.quobyte ``` If you have a QNS
+    (Quobyte Name Service), the value for QUOBYTE_REGISTRY might look like
+    `<qnsid>.myquobyte.net`
 
 If you have a certificate for the client, it is stored as a Secret and
 mounted into the client Pod as client.cfg.
@@ -58,8 +72,9 @@ or
 $ kubectl -n quobyte create -f client-certificate-ds.yaml
 ```
 
-The deployed DaemonSet starts client pods on all nodes marked as `quobyte_client`.
-This can either be done manually, or by using the Quobyte operator.
+The deployed DaemonSet starts client pods on all nodes marked as
+`quobyte_client`. This can either be done manually, or by using the Quobyte
+operator.
 
 ```bash
 $ kubectl label nodes <node-1> <node-n> quobyte_client="true"
