@@ -33,7 +33,7 @@ Quobyte client running. The client runs inside of a Pod and makes the Quobyte
 storage accessible to other pods.
 
 We provide two different DaemonSet definitions: the [recommended one](deploy/client-ds.yaml)
-and [legacy one](deploy/client-ds-legacy.yaml). The former can be used only with
+and [legacy one](deploy/legacy-client-ds.yaml). The former can be used only with
 explicit user and group mapping. The latter allows you to resolve user and group
 identity using a host Name Service Switch (NSS), which we do not recommend as
 this approach poses certain security and system stability risks. We provide the
