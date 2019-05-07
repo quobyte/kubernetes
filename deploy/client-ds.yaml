@@ -59,15 +59,23 @@ spec:
 
             mkdir -p /root/.quobyte ${QUOBYTE_MOUNT_POINT}
 
-            # set the mount point immutable. As long as mount.quobyte does not run,
-            # other processes cannot write data to this dir.
-            chattr +i ${QUOBYTE_MOUNT_POINT} || \
-              echo "WARNING: The local filesystem does not support IMMUTABLE flag"
+            if find "$QUOBYTE_MOUNT_POINT" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+                echo "POLLUTED MOUNT POINT DETECTED! Cannot use $QUOBYTE_MOUNT_POINT as a mount point."
+                echo "Please remove all files and directories from $QUOBYTE_MOUNT_POINT and "
+                echo "run 'chattr +i $QUOBYTE_MOUNT_POINT' to prevent future mount point pollution."
+            else
+              # set the mount point immutable. As long as mount.quobyte does not run,
+              # other processes cannot write data to this dir.
+              chattr +i ${QUOBYTE_MOUNT_POINT} || \
+                echo "WARNING: The local filesystem does not support IMMUTABLE flag. Mount point pollution is possible."
 
-            /usr/bin/mount.quobyte --hostname ${NODENAME} \
-              --allow-usermapping-in-volumename --http-port 55000 -f \
-              -d ${QUOBYTE_CLIENT_LOG_LEVEL} -l /dev/stdout ${OPTS} \
-              ${QUOBYTE_REGISTRY}/ ${QUOBYTE_MOUNT_POINT}
+              /usr/bin/mount.quobyte --hostname ${NODENAME} \
+                --allow-usermapping-in-volumename --http-port 55000 -f \
+                -d ${QUOBYTE_CLIENT_LOG_LEVEL} -l /dev/stdout ${OPTS} \
+                ${QUOBYTE_REGISTRY}/ ${QUOBYTE_MOUNT_POINT}
+            fi
+
+
         securityContext:
           privileged: true
         volumeMounts:
