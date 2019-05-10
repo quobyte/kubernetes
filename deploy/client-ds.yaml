@@ -72,6 +72,7 @@ spec:
               /usr/bin/mount.quobyte --hostname ${NODENAME} \
                 --allow-usermapping-in-volumename --http-port 55000 -f \
                 -d ${QUOBYTE_CLIENT_LOG_LEVEL} -l /dev/stdout ${OPTS} \
+                --minidump-path /tmp/minidumps --allow-minidump-upload \
                 ${QUOBYTE_REGISTRY}/ ${QUOBYTE_MOUNT_POINT}
             fi
 
@@ -82,6 +83,8 @@ spec:
           - name: k8s-plugin-dir
             mountPath: /mnt
             mountPropagation: Bidirectional
+          - name: minidumps-dir
+            mountPath: /tmp/minidumps
         lifecycle:
           preStop:
             exec:
@@ -92,3 +95,6 @@ spec:
       - name: k8s-plugin-dir
         hostPath:
           path: /var/lib/kubelet/plugins/
+      - name: minidumps-dir
+        hostPath:
+          path: /var/lib/quobyte/.minidumps

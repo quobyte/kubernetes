@@ -101,6 +101,7 @@ spec:
               -c ./root/.quobyte/client.cfg \
               --hostname ${NODENAME} \
               --allow-usermapping-in-volumename \
+              --minidump-path /tmp/minidumps --allow-minidump-upload \
               --http-port 55000 \
               -f \
               -l /dev/stdout \
@@ -116,6 +117,8 @@ spec:
             mountPath: /etcfs
           - name: configs
             mountPath: /quobytecert
+          - name: minidumps-dir
+            mountPath: /tmp/minidumps
         lifecycle:
           preStop:
             exec:
@@ -130,6 +133,9 @@ spec:
       - name: etcfs
         hostPath:
           path: /etc
+      - name: minidumps-dir
+        hostPath:
+          path: /var/lib/quobyte/.minidumps
       - name: configs
         secret:
           defaultMode: 420
