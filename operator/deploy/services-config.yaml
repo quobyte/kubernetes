@@ -2,6 +2,7 @@ apiVersion: quobyte.com/v1
 kind: QuobyteService
 metadata:
   name: quobyte-services
+  namespace: quobyte
 spec:
   registry:
     daemonSetName: registry
