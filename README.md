@@ -1,6 +1,8 @@
 Scripts and tools for deploying Quobyte on Kubernetes
 =====================================================
 
+**DEPRECATED in favour of [Quobyte CSI](https://github.com/quobyte/quobyte-csi)**
+
 Currently contains:
  * **operator** The recommended way to run Quobyte clients and servers in your k8s cluster.
  * **deploy** Deployment files for Quobyte on Kubernetes
